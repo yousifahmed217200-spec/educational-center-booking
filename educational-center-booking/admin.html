@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Admin — Educational Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- ================= LOGIN SCREEN ================= -->
+<div class="admin-login" id="loginScreen">
+  <div class="admin-login__card">
+    <h1>Admin Login</h1>
+    <p class="admin-login__subtitle">Sign in to manage reservations, teachers, subjects and slots.</p>
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label" for="loginEmail">Email</label>
+        <input class="form-input" type="email" id="loginEmail" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="loginPassword">Password</label>
+        <input class="form-input" type="password" id="loginPassword" required autocomplete="current-password">
+      </div>
+      <div id="loginError"></div>
+      <button class="btn btn-primary" type="submit" id="btnLogin">
+        <span class="btn-spinner"></span><span class="btn-label">Sign In</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ================= ADMIN APP ================= -->
+<div class="admin-app" id="adminApp" hidden>
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar__brand">Admin</div>
+    <nav class="admin-nav">
+      <button class="admin-nav__item is-active" data-tab="dashboard">Dashboard</button>
+      <button class="admin-nav__item" data-tab="reservations">Reservations</button>
+      <button class="admin-nav__item" data-tab="teachers">Teachers</button>
+      <button class="admin-nav__item" data-tab="subjects">Subjects</button>
+      <button class="admin-nav__item" data-tab="grades">Grades</button>
+      <button class="admin-nav__item" data-tab="slots">Slots</button>
+    </nav>
+    <button class="btn btn-secondary" id="btnLogout" style="margin-top:auto;">Log Out</button>
+  </aside>
+
+  <main class="admin-main">
+    <!-- DASHBOARD -->
+    <section class="admin-tab" id="tab-dashboard">
+      <h2 class="view-heading">Dashboard</h2>
+      <div class="stat-grid" id="statGrid"></div>
+    </section>
+
+    <!-- RESERVATIONS -->
+    <section class="admin-tab" id="tab-reservations" hidden>
+      <h2 class="view-heading">Reservations</h2>
+      <div class="admin-filters" id="reservationFilters">
+        <select class="form-select" id="filterGrade"><option value="">All Grades</option></select>
+        <select class="form-select" id="filterStatus">
+          <option value="">All Statuses</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="pending">Pending</option>
+        </select>
+        <input class="form-input" type="date" id="filterDate">
+      </div>
+      <div class="admin-table-wrap"><table class="admin-table" id="reservationsTable"></table></div>
+    </section>
+
+    <!-- TEACHERS -->
+    <section class="admin-tab" id="tab-teachers" hidden>
+      <h2 class="view-heading">Teachers</h2>
+      <div class="admin-table-wrap"><table class="admin-table" id="teachersTable"></table></div>
+    </section>
+
+    <!-- SUBJECTS -->
+    <section class="admin-tab" id="tab-subjects" hidden>
+      <h2 class="view-heading">Subjects</h2>
+      <div class="admin-table-wrap"><table class="admin-table" id="subjectsTable"></table></div>
+    </section>
+
+    <!-- GRADES -->
+    <section class="admin-tab" id="tab-grades" hidden>
+      <h2 class="view-heading">Grades</h2>
+      <div class="admin-table-wrap"><table class="admin-table" id="gradesTable"></table></div>
+    </section>
+
+    <!-- SLOTS -->
+    <section class="admin-tab" id="tab-slots" hidden>
+      <h2 class="view-heading">Lesson Slots</h2>
+      <div class="admin-table-wrap"><table class="admin-table" id="slotsTable"></table></div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

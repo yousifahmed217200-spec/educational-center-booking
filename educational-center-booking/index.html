@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Educational Center — Lesson Booking</title>
+<meta name="description" content="Book private lessons — choose your grade, subjects, teachers and schedule.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ============================ HEADER / PROGRESS ============================ -->
+  <header class="app-header" id="appHeader" hidden>
+    <div class="app-header__title" id="centerNameHeader">Educational Center</div>
+    <nav class="progress-track" id="progressTrack" aria-label="Booking progress"></nav>
+  </header>
+
+  <!-- ============================ MAIN ============================ -->
+  <main class="app-main" id="appMain">
+
+    <!-- ---------- STEP 0: WELCOME ---------- -->
+    <section class="view welcome-view" id="view-welcome" data-step="welcome">
+      <div class="welcome-badge" id="welcomeBadge">EC</div>
+      <h1>Welcome to <span id="welcomeCenterName">Educational Center</span></h1>
+      <p id="welcomeTagline">Book your lessons easily and choose the subjects, teachers and schedules that suit you.</p>
+      <button class="btn btn-primary" style="max-width:280px;" id="btnStartRegistration" type="button">
+        Start Registration
+      </button>
+    </section>
+
+    <!-- ---------- STEP 1: STUDENT INFORMATION ---------- -->
+    <section class="view" id="view-student" data-step="student" hidden>
+      <h2 class="view-heading">Student Information</h2>
+      <p class="view-subheading">Tell us a bit about the student so we can set up the booking.</p>
+
+      <form id="formStudent" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="fullName">Full Name</label>
+          <input class="form-input" type="text" id="fullName" name="fullName" autocomplete="name" required>
+          <div class="form-error" id="err-fullName" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="mobile">Mobile Number</label>
+          <input class="form-input" type="tel" id="mobile" name="mobile" inputmode="tel" placeholder="01012345678" autocomplete="tel" required>
+          <div class="form-hint">Egyptian mobile — e.g. 010xxxxxxxx, 011xxxxxxxx, 012xxxxxxxx, 015xxxxxxxx</div>
+          <div class="form-error" id="err-mobile" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="age">Age</label>
+          <input class="form-input" type="number" id="age" name="age" inputmode="numeric" min="3" max="100" required>
+          <div class="form-error" id="err-age" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <fieldset>
+            <legend>Gender</legend>
+            <div class="radio-row" id="genderRow" role="radiogroup" aria-label="Gender">
+              <div class="radio-pill" data-value="male" tabindex="0" role="radio" aria-checked="false">Male</div>
+              <div class="radio-pill" data-value="female" tabindex="0" role="radio" aria-checked="false">Female</div>
+            </div>
+          </fieldset>
+          <div class="form-error" id="err-gender" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="parentName">Parent / Guardian Name</label>
+          <input class="form-input" type="text" id="parentName" name="parentName" autocomplete="off" required>
+          <div class="form-error" id="err-parentName" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="parentMobile">Parent / Guardian Mobile Number</label>
+          <input class="form-input" type="tel" id="parentMobile" name="parentMobile" inputmode="tel" placeholder="01098765432" autocomplete="off" required>
+          <div class="form-error" id="err-parentMobile" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address <span class="optional-tag">(optional)</span></label>
+          <input class="form-input" type="email" id="email" name="email" autocomplete="email">
+          <div class="form-error" id="err-email" role="alert"></div>
+        </div>
+      </form>
+    </section>
+
+    <!-- ---------- STEP 2: GRADE ---------- -->
+    <section class="view" id="view-grade" data-step="grade" hidden>
+      <h2 class="view-heading">Select Grade</h2>
+      <p class="view-subheading">Choose the student's current grade.</p>
+      <div id="gradeList"></div>
+    </section>
+
+    <!-- ---------- STEP 3: SUBJECTS ---------- -->
+    <section class="view" id="view-subjects" data-step="subjects" hidden>
+      <h2 class="view-heading">Select Subjects</h2>
+      <p class="view-subheading">Choose one or more subjects for <span id="subjectsGradeName"></span>.</p>
+      <div id="subjectList"></div>
+    </section>
+
+    <!-- ---------- STEP 4: TEACHERS ---------- -->
+    <section class="view" id="view-teachers" data-step="teachers" hidden>
+      <h2 class="view-heading">Select Teachers</h2>
+      <p class="view-subheading">Choose one teacher for each subject.</p>
+      <div id="teacherGroups"></div>
+    </section>
+
+    <!-- ---------- STEP 5: SCHEDULE / SLOTS ---------- -->
+    <section class="view" id="view-slots" data-step="slots" hidden>
+      <h2 class="view-heading">Select Lesson Times</h2>
+      <p class="view-subheading">Choose a slot for each subject with your chosen teacher.</p>
+      <div id="slotGroups"></div>
+    </section>
+
+    <!-- ---------- STEP 6: REVIEW ---------- -->
+    <section class="view" id="view-review" data-step="review" hidden>
+      <h2 class="view-heading">Reservation Summary</h2>
+      <p class="view-subheading">Please review your details before confirming.</p>
+      <div id="reviewContent"></div>
+      <div id="reviewErrorBanner"></div>
+    </section>
+
+    <!-- ---------- SUCCESS ---------- -->
+    <section class="view success-view" id="view-success" data-step="success" hidden>
+      <div class="success-check">✓</div>
+      <h2 class="view-heading" style="text-align:center;">Reservation Completed</h2>
+      <p class="view-subheading" style="text-align:center;" id="successThankYou"></p>
+
+      <div class="reservation-code-box">
+        <div class="reservation-code-box__label">Reservation Number</div>
+        <div class="reservation-code-box__value" id="successReservationCode"></div>
+      </div>
+
+      <div style="text-align:left;">
+        <div class="summary-section__title">Your Lessons</div>
+        <div id="successLessons"></div>
+      </div>
+
+      <p class="view-subheading" style="margin-top:20px;">The educational center will contact you if needed.</p>
+      <button class="btn btn-secondary" id="btnNewReservation" type="button">Make Another Reservation</button>
+    </section>
+
+  </main>
+
+  <!-- ============================ FOOTER NAV ============================ -->
+  <footer class="step-footer" id="stepFooter" hidden>
+    <button class="btn btn-secondary" id="btnBack" type="button">← Back</button>
+    <button class="btn btn-primary" id="btnNext" type="button">
+      <span class="btn-spinner"></span>
+      <span class="btn-label">Continue</span>
+    </button>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
