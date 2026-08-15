@@ -10,7 +10,7 @@
 //
 // NEVER put the "service_role" key here — that key must stay server-side only.
 // ----------------------------------------------------------------------------
-const SUPABASE_URL = "https://qfrcurdmgyzsbdomlnxx.supabase.co/rest/v1";
+const SUPABASE_URL = "https://qfrcurdmgyzsbdomlnxx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmcmN1cmRtZ3l6c2Jkb21sbnh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MTcyNDAsImV4cCI6MjEwMjE5MzI0MH0.kbksk7I-PHhvHO_mXsdTcnALW3Q-9seHt6-a49YyMds";
 
 // Optional: URL of your deployed send-reservation-email Edge Function.
