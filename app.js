@@ -1,78 +1,52 @@
 // ============================================================================
-// EDUCATIONAL CENTER BOOKING - APPLICATION LOGIC
+// EDUCATIONAL CENTER BOOKING - APPLICATION LOGIC (Arabic)
 // ============================================================================
 
-// ----------------------------------------------------------------------------
-// CONFIGURATION — replace these with YOUR Supabase project's values.
-// Find them in: Supabase Dashboard -> Project Settings -> API
-//   SUPABASE_URL      = "Project URL"
-//   SUPABASE_ANON_KEY = "anon / public" key (safe for the browser under RLS)
-//
-// NEVER put the "service_role" key here — that key must stay server-side only.
-// ----------------------------------------------------------------------------
 const SUPABASE_URL = "https://qfrcurdmgyzsbdomlnxx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmcmN1cmRtZ3l6c2Jkb21sbnh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MTcyNDAsImV4cCI6MjEwMjE5MzI0MH0.kbksk7I-PHhvHO_mXsdTcnALW3Q-9seHt6-a49YyMds";
 
-// Optional: URL of your deployed send-reservation-email Edge Function.
-// Looks like: https://<project-ref>.functions.supabase.co/send-reservation-email
-// Leave as-is if you haven't deployed it yet — booking still works without it.
 const EMAIL_FUNCTION_URL = "YOUR_SUPABASE_URL/functions/v1/send-reservation-email";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ----------------------------------------------------------------------------
-// STEP DEFINITIONS
-// ----------------------------------------------------------------------------
 const STEPS = [
-  { key: "student", label: "Student", number: 1 },
-  { key: "grade", label: "Grade", number: 2 },
-  { key: "subjects", label: "Subjects", number: 3 },
-  { key: "teachers", label: "Teachers", number: 4 },
-  { key: "slots", label: "Schedule", number: 5 },
-  { key: "review", label: "Review", number: 6 },
+  { key: "student", label: "الطالب", number: 1 },
+  { key: "grade", label: "الصف", number: 2 },
+  { key: "subjects", label: "المواد", number: 3 },
+  { key: "teachers", label: "المعلمين", number: 4 },
+  { key: "slots", label: "الجدول", number: 5 },
+  { key: "review", label: "المراجعة", number: 6 },
 ];
 
-// ----------------------------------------------------------------------------
-// APPLICATION STATE
-// ----------------------------------------------------------------------------
 const bookingState = {
-  currentStepIndex: -1, // -1 = welcome
-  student: {
-    fullName: "", mobile: "", age: "", gender: "",
-    parentName: "", parentMobile: "", email: "",
-  },
-  grade: null,           // { id, name }
-  subjects: [],           // [{ id, name, description }]
-  teacherBySubject: {},    // { subjectId: { id, full_name, title } }
-  slotBySubject: {},       // { subjectId: { id, day_of_week, start_time, end_time, ... } }
+  currentStepIndex: -1,
+  student: { fullName: "", mobile: "", age: "", gender: "", parentName: "", parentMobile: "", email: "" },
+  grade: null,
+  subjects: [],
+  teacherBySubject: {},
+  slotBySubject: {},
   idempotencyKey: null,
   reservationResult: null,
 };
 
-// Cache of catalog data fetched from Supabase, keyed by relevant IDs.
 const dataCache = {
   grades: null,
-  subjectsByGrade: {},      // gradeId -> [subjects]
-  teachersBySubjectGrade: {}, // `${gradeId}:${subjectId}` -> [teachers]
-  slotsByTeacherSubjectGrade: {}, // `${gradeId}:${subjectId}:${teacherId}` -> [slots]
+  subjectsByGrade: {},
+  teachersBySubjectGrade: {},
+  slotsByTeacherSubjectGrade: {},
   centerSettings: null,
 };
 
-const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-// ============================================================================
-// UTILITIES
-// ============================================================================
+const DAY_NAMES = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
 function $(id) { return document.getElementById(id); }
 
 function formatTime12h(timeStr) {
-  // "16:00:00" -> "4:00 PM"
   const [hStr, m] = timeStr.split(":");
   let h = parseInt(hStr, 10);
-  const ampm = h >= 12 ? "PM" : "AM";
+  const period = h >= 12 ? "م" : "ص";
   h = h % 12 || 12;
-  return `${h}:${m} ${ampm}`;
+  return `${h}:${m} ${period}`;
 }
 
 function escapeHtml(str) {
@@ -86,8 +60,6 @@ function generateIdempotencyKey() {
   return "idem-" + Date.now() + "-" + Math.random().toString(36).slice(2);
 }
 
-// Egyptian mobile validation (frontend UX layer — backend re-validates via
-// normalize_egyptian_mobile() inside create_reservation()).
 function isValidEgyptianMobile(raw) {
   if (!raw) return false;
   const cleaned = raw.replace(/[\s\-()]/g, "");
@@ -114,24 +86,19 @@ function clearBanner(containerEl) {
   containerEl.innerHTML = "";
 }
 
-// Friendly mapping from backend error codes/messages to student-facing text.
 function friendlyErrorMessage(err) {
   const raw = (err && err.message) || String(err) || "";
   if (raw.includes("SLOT_FULL") || raw.includes("SLOT_UNAVAILABLE") || raw.includes("SLOT_MISMATCH")) {
-    return "Sorry, this lesson has just become fully booked. Please choose another available slot.";
+    return "عذرًا، هذه الحصة اكتمل عدد المقاعد بها للتو. يرجى اختيار موعد آخر متاح.";
   }
   if (raw.includes("INVALID_") || raw.includes("SUBJECT_NOT_IN_GRADE") || raw.includes("DUPLICATE_SUBJECT")) {
-    return "Some of the information provided is invalid. Please review your selections and try again.";
+    return "بعض البيانات المدخلة غير صحيحة. يرجى مراجعة اختياراتك والمحاولة مرة أخرى.";
   }
   if (raw.includes("Failed to fetch") || raw.includes("NetworkError") || raw.includes("network")) {
-    return "Unable to connect to the server. Please check your internet connection and try again.";
+    return "تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.";
   }
-  return "Something went wrong. Please try again.";
+  return "حدث خطأ ما. يرجى المحاولة مرة أخرى.";
 }
-
-// ============================================================================
-// SUPABASE DATA ACCESS
-// ============================================================================
 
 async function fetchCenterSettings() {
   if (dataCache.centerSettings) return dataCache.centerSettings;
@@ -190,9 +157,6 @@ async function fetchTeachersForSubject(gradeId, subjectId) {
 async function fetchAvailableSlots(gradeId, subjectId, teacherId) {
   const key = `${gradeId}:${subjectId}:${teacherId}`;
   if (dataCache.slotsByTeacherSubjectGrade[key]) return dataCache.slotsByTeacherSubjectGrade[key];
-  // Uses the available_slots() RPC — it already excludes full slots and
-  // computes "remaining" live from confirmed reservation_items, never from a
-  // manually maintained counter.
   const { data, error } = await supabaseClient.rpc("available_slots", {
     p_grade_id: gradeId,
     p_subject_id: subjectId,
@@ -244,14 +208,9 @@ async function notifyAdminByEmail(reservationPayload) {
       body: JSON.stringify(reservationPayload),
     });
   } catch (err) {
-    // Never block or undo the reservation because of an email failure.
     console.warn("Admin email notification failed (reservation is still saved):", err);
   }
 }
-
-// ============================================================================
-// VIEW RENDERING — PROGRESS BAR
-// ============================================================================
 
 function renderProgress() {
   const track = $("progressTrack");
@@ -281,10 +240,6 @@ function setHeaderVisible(visible) {
   $("stepFooter").hidden = !visible;
 }
 
-// ============================================================================
-// STEP NAVIGATION
-// ============================================================================
-
 async function goToStep(index) {
   bookingState.currentStepIndex = index;
   const step = STEPS[index];
@@ -312,7 +267,7 @@ function updateFooterForStep(stepKey) {
   const btnBack = $("btnBack");
   const btnNext = $("btnNext");
   btnBack.style.visibility = stepKey === "student" ? "hidden" : "visible";
-  btnNext.querySelector(".btn-label").textContent = stepKey === "review" ? "Confirm Reservation" : "Continue";
+  btnNext.querySelector(".btn-label").textContent = stepKey === "review" ? "تأكيد الحجز" : "متابعة";
 }
 
 function renderStepLoadError(stepKey, err) {
@@ -332,10 +287,6 @@ function goBack() {
   }
   goToStep(bookingState.currentStepIndex - 1);
 }
-
-// ============================================================================
-// STEP 1: STUDENT INFORMATION
-// ============================================================================
 
 function renderStudentStep() {
   $("fullName").value = bookingState.student.fullName;
@@ -395,14 +346,14 @@ function validateStudentStep() {
   const email = $("email").value.trim();
   const gender = bookingState.student.gender;
 
-  if (fullName.length < 3) { showFieldError("fullName", "Please enter the student's full name (at least 3 characters)."); valid = false; }
-  if (!isValidEgyptianMobile(mobile)) { showFieldError("mobile", "Please enter a valid Egyptian mobile number."); valid = false; }
+  if (fullName.length < 3) { showFieldError("fullName", "يرجى إدخال الاسم الكامل للطالب (3 أحرف على الأقل)."); valid = false; }
+  if (!isValidEgyptianMobile(mobile)) { showFieldError("mobile", "يرجى إدخال رقم موبايل مصري صحيح."); valid = false; }
   const ageNum = Number(age);
-  if (!age || isNaN(ageNum) || ageNum < 3 || ageNum > 100) { showFieldError("age", "Please enter a valid age between 3 and 100."); valid = false; }
-  if (!gender) { showFieldError("gender", "Please select a gender."); valid = false; }
-  if (parentName.length < 3) { showFieldError("parentName", "Please enter the parent/guardian's full name."); valid = false; }
-  if (!isValidEgyptianMobile(parentMobile)) { showFieldError("parentMobile", "Please enter a valid Egyptian mobile number."); valid = false; }
-  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showFieldError("email", "Please enter a valid email address."); valid = false; }
+  if (!age || isNaN(ageNum) || ageNum < 3 || ageNum > 100) { showFieldError("age", "يرجى إدخال عمر صحيح بين 3 و 100."); valid = false; }
+  if (!gender) { showFieldError("gender", "يرجى اختيار النوع."); valid = false; }
+  if (parentName.length < 3) { showFieldError("parentName", "يرجى إدخال اسم ولي الأمر بالكامل."); valid = false; }
+  if (!isValidEgyptianMobile(parentMobile)) { showFieldError("parentMobile", "يرجى إدخال رقم موبايل مصري صحيح."); valid = false; }
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showFieldError("email", "يرجى إدخال بريد إلكتروني صحيح."); valid = false; }
 
   if (valid) {
     bookingState.student = { fullName, mobile, age, gender, parentName, parentMobile, email };
@@ -410,24 +361,21 @@ function validateStudentStep() {
   return valid;
 }
 
-// ============================================================================
-// STEP 2: GRADE
-// ============================================================================
-
 async function renderGradeStep() {
   const listEl = $("gradeList");
-  listEl.innerHTML = `<div class="state-block"><div class="spinner-lg"></div>Loading grades...</div>`;
+  listEl.innerHTML = `<div class="state-block"><div class="spinner-lg"></div>جارٍ تحميل الصفوف الدراسية...</div>`;
   const grades = await fetchGrades();
   listEl.innerHTML = "";
 
   if (!grades.length) {
-    listEl.innerHTML = `<div class="state-block">No grades are currently available. Please contact the center.</div>`;
+    listEl.innerHTML = `<div class="state-block">لا توجد صفوف دراسية متاحة حاليًا. يرجى التواصل مع المركز.</div>`;
     return;
   }
 
-  grades.forEach((grade) => {
+  grades.forEach((grade, i) => {
     const card = document.createElement("div");
     card.className = "option-card";
+    card.style.animationDelay = `${i * 0.03}s`;
     card.setAttribute("role", "radio");
     card.setAttribute("tabindex", "0");
     const isSelected = bookingState.grade && bookingState.grade.id === grade.id;
@@ -454,8 +402,6 @@ function selectGrade(grade) {
   bookingState.grade = { id: grade.id, name: grade.name };
 
   if (gradeChanged) {
-    // Rule from spec #38: if the grade changes, clear incompatible
-    // downstream selections (subjects/teachers/slots).
     bookingState.subjects = [];
     bookingState.teacherBySubject = {};
     bookingState.slotBySubject = {};
@@ -463,25 +409,22 @@ function selectGrade(grade) {
   renderGradeStep();
 }
 
-// ============================================================================
-// STEP 3: SUBJECTS
-// ============================================================================
-
 async function renderSubjectsStep() {
   $("subjectsGradeName").textContent = bookingState.grade.name;
   const listEl = $("subjectList");
-  listEl.innerHTML = `<div class="state-block"><div class="spinner-lg"></div>Loading subjects...</div>`;
+  listEl.innerHTML = `<div class="state-block"><div class="spinner-lg"></div>جارٍ تحميل المواد...</div>`;
   const subjects = await fetchSubjectsForGrade(bookingState.grade.id);
   listEl.innerHTML = "";
 
   if (!subjects.length) {
-    listEl.innerHTML = `<div class="state-block">No subjects are currently available for this grade. Please choose a different grade or contact the center.</div>`;
+    listEl.innerHTML = `<div class="state-block">لا توجد مواد متاحة حاليًا لهذا الصف. يرجى اختيار صف آخر أو التواصل مع المركز.</div>`;
     return;
   }
 
-  subjects.forEach((subject) => {
+  subjects.forEach((subject, i) => {
     const card = document.createElement("div");
     card.className = "option-card";
+    card.style.animationDelay = `${i * 0.03}s`;
     card.setAttribute("role", "checkbox");
     card.setAttribute("tabindex", "0");
     const isSelected = bookingState.subjects.some((s) => s.id === subject.id);
@@ -503,7 +446,6 @@ async function renderSubjectsStep() {
 function toggleSubject(subject) {
   const idx = bookingState.subjects.findIndex((s) => s.id === subject.id);
   if (idx >= 0) {
-    // Rule from spec #38: removing a subject removes its teacher & slot too.
     bookingState.subjects.splice(idx, 1);
     delete bookingState.teacherBySubject[subject.id];
     delete bookingState.slotBySubject[subject.id];
@@ -513,13 +455,9 @@ function toggleSubject(subject) {
   renderSubjectsStep();
 }
 
-// ============================================================================
-// STEP 4: TEACHERS (one selection group per selected subject)
-// ============================================================================
-
 async function renderTeachersStep() {
   const container = $("teacherGroups");
-  container.innerHTML = `<div class="state-block"><div class="spinner-lg"></div>Loading teachers...</div>`;
+  container.innerHTML = `<div class="state-block"><div class="spinner-lg"></div>جارٍ تحميل المعلمين...</div>`;
 
   const results = await Promise.all(
     bookingState.subjects.map((subject) => fetchTeachersForSubject(bookingState.grade.id, subject.id))
@@ -540,7 +478,7 @@ async function renderTeachersStep() {
       const empty = document.createElement("div");
       empty.className = "state-block";
       empty.style.padding = "16px 0";
-      empty.textContent = "No teachers are currently assigned to this subject for the selected grade.";
+      empty.textContent = "لا يوجد معلمون معينون حاليًا لهذه المادة في هذا الصف.";
       group.appendChild(empty);
     } else {
       teachers.forEach((teacher) => {
@@ -573,19 +511,14 @@ function selectTeacher(subject, teacher) {
   const teacherChanged = !prevTeacher || prevTeacher.id !== teacher.id;
   bookingState.teacherBySubject[subject.id] = { id: teacher.id, full_name: teacher.full_name, title: teacher.title };
   if (teacherChanged) {
-    // Changing teacher invalidates any previously chosen slot for this subject.
     delete bookingState.slotBySubject[subject.id];
   }
   renderTeachersStep();
 }
 
-// ============================================================================
-// STEP 5: LESSON SLOTS
-// ============================================================================
-
 async function renderSlotsStep() {
   const container = $("slotGroups");
-  container.innerHTML = `<div class="state-block"><div class="spinner-lg"></div>Checking availability...</div>`;
+  container.innerHTML = `<div class="state-block"><div class="spinner-lg"></div>جارٍ التحقق من التوافر...</div>`;
 
   const results = await Promise.all(
     bookingState.subjects.map((subject) => {
@@ -611,7 +544,7 @@ async function renderSlotsStep() {
       const empty = document.createElement("div");
       empty.className = "state-block";
       empty.style.padding = "16px 0";
-      empty.textContent = "No available lesson times for this teacher right now. Please choose a different teacher.";
+      empty.textContent = "لا توجد مواعيد متاحة لهذا المعلم حاليًا. يرجى اختيار معلم آخر.";
       group.appendChild(empty);
     } else {
       slots.forEach((slot) => {
@@ -624,14 +557,14 @@ async function renderSlotsStep() {
         card.classList.toggle("is-selected", isSelected);
         card.setAttribute("aria-checked", String(isSelected));
         const badgeClass = slot.remaining <= 1 ? "option-card__badge is-low" : "option-card__badge";
-        const seatWord = slot.remaining === 1 ? "seat" : "seats";
+        const seatWord = slot.remaining === 1 ? "مقعد متبقٍ" : "مقاعد متبقية";
         card.innerHTML = `
           <span class="option-card__check is-radio">${checkIconSvg()}</span>
           <span class="option-card__body">
             <span class="option-card__title">${DAY_NAMES[slot.day_of_week]}</span>
             <span class="option-card__subtitle">${formatTime12h(slot.start_time)} - ${formatTime12h(slot.end_time)}</span>
           </span>
-          <span class="${badgeClass}">${slot.remaining} ${seatWord} left</span>`;
+          <span class="${badgeClass}">${slot.remaining} ${seatWord}</span>`;
         const select = () => selectSlot(subject, slot);
         card.addEventListener("click", select);
         card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); } });
@@ -649,10 +582,6 @@ function selectSlot(subject, slot) {
   renderSlotsStep();
 }
 
-// ============================================================================
-// STEP 6: REVIEW
-// ============================================================================
-
 function renderReviewStep() {
   clearBanner($("reviewErrorBanner"));
   const s = bookingState.student;
@@ -664,51 +593,47 @@ function renderReviewStep() {
     return `
       <div class="lesson-summary-card">
         <div class="lesson-summary-card__subject">${escapeHtml(subject.name)}</div>
-        <div class="lesson-summary-card__meta">Teacher: ${escapeHtml(teacher.full_name)}</div>
+        <div class="lesson-summary-card__meta">المعلم: ${escapeHtml(teacher.full_name)}</div>
         <div class="lesson-summary-card__meta">${DAY_NAMES[slot.day_of_week]} · ${formatTime12h(slot.start_time)} - ${formatTime12h(slot.end_time)}</div>
       </div>`;
   }).join("");
 
   container.innerHTML = `
     <div class="summary-section">
-      <div class="summary-section__title">Student</div>
+      <div class="summary-section__title">بيانات الطالب</div>
       <div class="card">
-        <div class="summary-row"><span class="summary-row__label">Full Name</span><span class="summary-row__value">${escapeHtml(s.fullName)}</span></div>
-        <div class="summary-row"><span class="summary-row__label">Mobile</span><span class="summary-row__value">${escapeHtml(s.mobile)}</span></div>
-        <div class="summary-row"><span class="summary-row__label">Age</span><span class="summary-row__value">${escapeHtml(String(s.age))}</span></div>
-        <div class="summary-row"><span class="summary-row__label">Gender</span><span class="summary-row__value">${s.gender === "male" ? "Male" : "Female"}</span></div>
-        <div class="summary-row"><span class="summary-row__label">Parent Name</span><span class="summary-row__value">${escapeHtml(s.parentName)}</span></div>
-        <div class="summary-row"><span class="summary-row__label">Parent Mobile</span><span class="summary-row__value">${escapeHtml(s.parentMobile)}</span></div>
-        ${s.email ? `<div class="summary-row"><span class="summary-row__label">Email</span><span class="summary-row__value">${escapeHtml(s.email)}</span></div>` : ""}
-        <div class="summary-row"><span class="summary-row__label">Grade</span><span class="summary-row__value">${escapeHtml(bookingState.grade.name)}</span></div>
+        <div class="summary-row"><span class="summary-row__label">الاسم الكامل</span><span class="summary-row__value">${escapeHtml(s.fullName)}</span></div>
+        <div class="summary-row"><span class="summary-row__label">الموبايل</span><span class="summary-row__value">${escapeHtml(s.mobile)}</span></div>
+        <div class="summary-row"><span class="summary-row__label">العمر</span><span class="summary-row__value">${escapeHtml(String(s.age))}</span></div>
+        <div class="summary-row"><span class="summary-row__label">النوع</span><span class="summary-row__value">${s.gender === "male" ? "ذكر" : "أنثى"}</span></div>
+        <div class="summary-row"><span class="summary-row__label">اسم ولي الأمر</span><span class="summary-row__value">${escapeHtml(s.parentName)}</span></div>
+        <div class="summary-row"><span class="summary-row__label">موبايل ولي الأمر</span><span class="summary-row__value">${escapeHtml(s.parentMobile)}</span></div>
+        ${s.email ? `<div class="summary-row"><span class="summary-row__label">البريد الإلكتروني</span><span class="summary-row__value">${escapeHtml(s.email)}</span></div>` : ""}
+        <div class="summary-row"><span class="summary-row__label">الصف الدراسي</span><span class="summary-row__value">${escapeHtml(bookingState.grade.name)}</span></div>
       </div>
     </div>
     <div class="summary-section">
-      <div class="summary-section__title">Lessons</div>
+      <div class="summary-section__title">الحصص</div>
       ${lessonsHtml}
     </div>`;
 }
-
-// ============================================================================
-// STEP VALIDATION + FORWARD NAVIGATION
-// ============================================================================
 
 function validateCurrentStepBeforeAdvance() {
   const stepKey = STEPS[bookingState.currentStepIndex].key;
   switch (stepKey) {
     case "student":
-      return validateStudentStep() ? null : "Please correct the highlighted fields.";
+      return validateStudentStep() ? null : "يرجى تصحيح الحقول المميزة.";
     case "grade":
-      return bookingState.grade ? null : "Please select a grade to continue.";
+      return bookingState.grade ? null : "يرجى اختيار الصف الدراسي للمتابعة.";
     case "subjects":
-      return bookingState.subjects.length > 0 ? null : "Please select at least one subject to continue.";
+      return bookingState.subjects.length > 0 ? null : "يرجى اختيار مادة واحدة على الأقل للمتابعة.";
     case "teachers": {
       const missing = bookingState.subjects.some((s) => !bookingState.teacherBySubject[s.id]);
-      return missing ? "Please choose a teacher for every subject." : null;
+      return missing ? "يرجى اختيار معلم لكل مادة." : null;
     }
     case "slots": {
       const missing = bookingState.subjects.some((s) => !bookingState.slotBySubject[s.id]);
-      return missing ? "Please choose a lesson time for every subject." : null;
+      return missing ? "يرجى اختيار موعد حصة لكل مادة." : null;
     }
     default:
       return null;
@@ -725,7 +650,7 @@ async function handleNextClicked() {
 
   const errorMsg = validateCurrentStepBeforeAdvance();
   if (errorMsg) {
-    if (stepKey !== "student") alert(errorMsg); // simple guard for non-form steps
+    if (stepKey !== "student") alert(errorMsg);
     return;
   }
 
@@ -734,20 +659,14 @@ async function handleNextClicked() {
   }
 }
 
-// ============================================================================
-// RESERVATION SUBMISSION
-// ============================================================================
-
 async function handleConfirmReservation() {
   const btnNext = $("btnNext");
   const btnBack = $("btnBack");
 
-  // Duplicate-submission protection: disable the button immediately and
-  // reuse the same idempotency key on any retry within this attempt.
   if (btnNext.disabled) return;
   if (!bookingState.idempotencyKey) bookingState.idempotencyKey = generateIdempotencyKey();
 
-  setButtonLoading(btnNext, true, "Submitting reservation...", "Confirm Reservation");
+  setButtonLoading(btnNext, true, "جارٍ تأكيد الحجز...", "تأكيد الحجز");
   btnBack.disabled = true;
   clearBanner($("reviewErrorBanner"));
 
@@ -755,27 +674,24 @@ async function handleConfirmReservation() {
     const result = await submitReservation();
     bookingState.reservationResult = result;
 
-    // Fire-and-forget admin email — never blocks or reverses the reservation.
     notifyAdminByEmail(result);
 
     renderSuccessView(result);
-    bookingState.currentStepIndex = STEPS.length; // past review
+    bookingState.currentStepIndex = STEPS.length;
     setHeaderVisible(false);
     showView("success");
+    launchConfetti();
   } catch (err) {
     console.error("Reservation failed:", err);
     showBanner($("reviewErrorBanner"), "error", friendlyErrorMessage(err));
-    // Allow retry with a NEW idempotency key only if the failure wasn't a
-    // transient duplicate — safe default: keep the same key, since a retry
-    // of a genuinely failed transaction should not double-book either.
   } finally {
-    setButtonLoading(btnNext, false, "", "Confirm Reservation");
+    setButtonLoading(btnNext, false, "", "تأكيد الحجز");
     btnBack.disabled = false;
   }
 }
 
 function renderSuccessView(result) {
-  $("successThankYou").textContent = `Thank you, ${result.student.full_name}. Your reservation has been successfully completed.`;
+  $("successThankYou").textContent = `شكرًا لك، ${result.student.full_name}. تم إتمام حجزك بنجاح.`;
   $("successReservationCode").textContent = result.reservation_code;
 
   const lessonsEl = $("successLessons");
@@ -787,9 +703,29 @@ function renderSuccessView(result) {
     </div>`).join("");
 }
 
-// ============================================================================
-// RESET / NEW RESERVATION
-// ============================================================================
+function launchConfetti() {
+  const container = $("confettiContainer");
+  if (!container) return;
+  container.innerHTML = "";
+  const colors = ["#0e6b64", "#d97a2b", "#15803d", "#2563eb", "#be185d"];
+  const pieceCount = 24;
+
+  for (let i = 0; i < pieceCount; i++) {
+    const piece = document.createElement("span");
+    piece.className = "confetti-piece";
+    const angle = (Math.PI * 2 * i) / pieceCount + Math.random() * 0.4;
+    const distance = 70 + Math.random() * 60;
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance - 20;
+    piece.style.setProperty("--tx", `${tx}px`);
+    piece.style.setProperty("--ty", `${ty}px`);
+    piece.style.setProperty("--rot", `${Math.random() * 360}deg`);
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDuration = `${0.7 + Math.random() * 0.5}s`;
+    piece.style.animationDelay = `${0.3 + Math.random() * 0.15}s`;
+    container.appendChild(piece);
+  }
+}
 
 function resetBookingState() {
   bookingState.currentStepIndex = -1;
@@ -800,22 +736,16 @@ function resetBookingState() {
   bookingState.slotBySubject = {};
   bookingState.idempotencyKey = null;
   bookingState.reservationResult = null;
-  // Clear slot cache since capacity has changed after this reservation.
   dataCache.slotsByTeacherSubjectGrade = {};
 }
-
-// ============================================================================
-// INITIALIZATION
-// ============================================================================
 
 async function initWelcomeContent() {
   try {
     const settings = await fetchCenterSettings();
-    document.title = `${settings.center_name} — Lesson Booking`;
+    document.title = `${settings.center_name} — حجز الحصص`;
     $("welcomeCenterName").textContent = settings.center_name;
     $("centerNameHeader").textContent = settings.center_name;
     $("welcomeTagline").textContent = settings.center_tagline;
-    $("welcomeBadge").textContent = settings.center_name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   } catch (err) {
     console.warn("Could not load center settings, using defaults.", err);
   }
@@ -832,7 +762,6 @@ function bindStaticEvents() {
   });
   bindGenderPills();
 
-  // Live-clear field errors as the student types.
   ["fullName", "mobile", "age", "parentName", "parentMobile", "email"].forEach((id) => {
     $(id).addEventListener("input", () => hideFieldError(id));
   });
