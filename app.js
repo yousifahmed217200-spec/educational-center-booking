@@ -374,18 +374,19 @@ async function renderGradeStep() {
 
   grades.forEach((grade, i) => {
     const card = document.createElement("div");
-    card.className = "option-card";
-    card.style.animationDelay = `${i * 0.03}s`;
+    card.className = `option-card ${accentClass(i)}`;
+    card.style.animationDelay = `${i * 0.045}s`;
     card.setAttribute("role", "radio");
     card.setAttribute("tabindex", "0");
     const isSelected = bookingState.grade && bookingState.grade.id === grade.id;
     card.classList.toggle("is-selected", isSelected);
     card.setAttribute("aria-checked", String(isSelected));
     card.innerHTML = `
-      <span class="option-card__check is-radio">${checkIconSvg()}</span>
+      ${avatarSpan(grade.name)}
       <span class="option-card__body">
         <span class="option-card__title">${escapeHtml(grade.name)}</span>
-      </span>`;
+      </span>
+      <span class="option-card__check is-radio">${checkIconSvg()}</span>`;
     const select = () => selectGrade(grade);
     card.addEventListener("click", select);
     card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); } });
@@ -395,6 +396,15 @@ async function renderGradeStep() {
 
 function checkIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function accentClass(i) {
+  return `accent-${i % 6}`;
+}
+
+function avatarSpan(label) {
+  const letter = (label || "؟").trim().charAt(0);
+  return `<span class="option-card__avatar">${escapeHtml(letter)}</span>`;
 }
 
 function selectGrade(grade) {
@@ -423,19 +433,20 @@ async function renderSubjectsStep() {
 
   subjects.forEach((subject, i) => {
     const card = document.createElement("div");
-    card.className = "option-card";
-    card.style.animationDelay = `${i * 0.03}s`;
+    card.className = `option-card ${accentClass(i)}`;
+    card.style.animationDelay = `${i * 0.045}s`;
     card.setAttribute("role", "checkbox");
     card.setAttribute("tabindex", "0");
     const isSelected = bookingState.subjects.some((s) => s.id === subject.id);
     card.classList.toggle("is-selected", isSelected);
     card.setAttribute("aria-checked", String(isSelected));
     card.innerHTML = `
-      <span class="option-card__check is-checkbox">${checkIconSvg()}</span>
+      ${avatarSpan(subject.name)}
       <span class="option-card__body">
         <span class="option-card__title">${escapeHtml(subject.name)}</span>
         ${subject.description ? `<span class="option-card__subtitle">${escapeHtml(subject.description)}</span>` : ""}
-      </span>`;
+      </span>
+      <span class="option-card__check is-checkbox">${checkIconSvg()}</span>`;
     const toggle = () => toggleSubject(subject);
     card.addEventListener("click", toggle);
     card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
@@ -481,9 +492,10 @@ async function renderTeachersStep() {
       empty.textContent = "لا يوجد معلمون معينون حاليًا لهذه المادة في هذا الصف.";
       group.appendChild(empty);
     } else {
-      teachers.forEach((teacher) => {
+      teachers.forEach((teacher, ti) => {
         const card = document.createElement("div");
-        card.className = "option-card";
+        card.className = `option-card ${accentClass(ti)}`;
+        card.style.animationDelay = `${ti * 0.045}s`;
         card.setAttribute("role", "radio");
         card.setAttribute("tabindex", "0");
         const selectedTeacher = bookingState.teacherBySubject[subject.id];
@@ -491,11 +503,12 @@ async function renderTeachersStep() {
         card.classList.toggle("is-selected", isSelected);
         card.setAttribute("aria-checked", String(isSelected));
         card.innerHTML = `
-          <span class="option-card__check is-radio">${checkIconSvg()}</span>
+          ${avatarSpan(teacher.full_name)}
           <span class="option-card__body">
             <span class="option-card__title">${escapeHtml(teacher.full_name)}</span>
             ${teacher.title ? `<span class="option-card__subtitle">${escapeHtml(teacher.title)}</span>` : ""}
-          </span>`;
+          </span>
+          <span class="option-card__check is-radio">${checkIconSvg()}</span>`;
         const select = () => selectTeacher(subject, teacher);
         card.addEventListener("click", select);
         card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); } });
@@ -547,9 +560,10 @@ async function renderSlotsStep() {
       empty.textContent = "لا توجد مواعيد متاحة لهذا المعلم حاليًا. يرجى اختيار معلم آخر.";
       group.appendChild(empty);
     } else {
-      slots.forEach((slot) => {
+      slots.forEach((slot, si) => {
         const card = document.createElement("div");
-        card.className = "option-card";
+        card.className = `option-card ${accentClass(si)}`;
+        card.style.animationDelay = `${si * 0.045}s`;
         card.setAttribute("role", "radio");
         card.setAttribute("tabindex", "0");
         const selectedSlot = bookingState.slotBySubject[subject.id];
@@ -559,11 +573,12 @@ async function renderSlotsStep() {
         const badgeClass = slot.remaining <= 1 ? "option-card__badge is-low" : "option-card__badge";
         const seatWord = slot.remaining === 1 ? "مقعد متبقٍ" : "مقاعد متبقية";
         card.innerHTML = `
-          <span class="option-card__check is-radio">${checkIconSvg()}</span>
+          ${avatarSpan(DAY_NAMES[slot.day_of_week])}
           <span class="option-card__body">
             <span class="option-card__title">${DAY_NAMES[slot.day_of_week]}</span>
             <span class="option-card__subtitle">${formatTime12h(slot.start_time)} - ${formatTime12h(slot.end_time)}</span>
           </span>
+          <span class="option-card__check is-radio">${checkIconSvg()}</span>
           <span class="${badgeClass}">${slot.remaining} ${seatWord}</span>`;
         const select = () => selectSlot(subject, slot);
         card.addEventListener("click", select);
