@@ -11,12 +11,22 @@
 </head>
 <body>
 
+<div class="bg-decor" aria-hidden="true">
+  <div class="bg-decor__dots"></div>
+  <div class="bg-decor__blob bg-decor__blob--1"></div>
+  <div class="bg-decor__blob bg-decor__blob--2"></div>
+  <div class="bg-decor__blob bg-decor__blob--3"></div>
+  <div class="bg-decor__blob bg-decor__blob--4"></div>
+</div>
+
 <div class="app-shell">
 
   <!-- ============================ HEADER / PROGRESS ============================ -->
   <header class="app-header" id="appHeader" hidden>
-    <div class="app-header__title" id="centerNameHeader">المركز التعليمي</div>
-    <nav class="progress-track" id="progressTrack" aria-label="مراحل الحجز"></nav>
+    <div class="app-header__inner">
+      <div class="app-header__title" id="centerNameHeader">المركز التعليمي</div>
+      <nav class="progress-track" id="progressTrack" aria-label="مراحل الحجز"></nav>
+    </div>
   </header>
 
   <!-- ============================ MAIN ============================ -->
@@ -52,6 +62,10 @@
             <line x1="56" y1="15" x2="56" y2="33" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="round"/>
           </g>
         </svg>
+        <span class="hero-trinket hero-trinket--pencil">✏️</span>
+        <span class="hero-trinket hero-trinket--star">✨</span>
+        <span class="hero-trinket hero-trinket--bulb">💡</span>
+        <span class="hero-trinket hero-trinket--note">📝</span>
       </div>
       <h1>مرحبًا بكم في <span id="welcomeCenterName">المركز التعليمي</span></h1>
       <p id="welcomeTagline">احجز حصصك بسهولة، واختر المواد والمعلمين والمواعيد التي تناسبك.</p>
@@ -160,6 +174,9 @@
           <circle cx="60" cy="60" r="54" fill="none" stroke="var(--color-success)" stroke-width="4" opacity="0.25"/>
           <path id="successCheckPath" d="M35 62 L52 79 L86 42" fill="none" stroke="var(--color-success)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
+        <span class="success-sparkle success-sparkle--1">🎉</span>
+        <span class="success-sparkle success-sparkle--2">✨</span>
+        <span class="success-sparkle success-sparkle--3">⭐</span>
         <div class="confetti" id="confettiContainer"></div>
       </div>
       <h2 class="view-heading" style="text-align:center;">تم الحجز بنجاح</h2>
