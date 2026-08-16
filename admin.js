@@ -98,6 +98,7 @@ document.querySelectorAll(".admin-nav__item").forEach((btn) => {
 function loadTab(tab) {
   switch (tab) {
     case "dashboard": return loadDashboard();
+    case "analytics": return loadAnalytics();
     case "reservations": return loadReservations();
     case "teachers": return loadTeachers();
     case "subjects": return loadSubjects();
@@ -173,6 +174,246 @@ async function loadDashboard() {
 
 function statCard(value, label) {
   return `<div class="stat-card"><div class="stat-card__value">${value}</div><div class="stat-card__label">${label}</div></div>`;
+}
+
+// ============================================================================
+// ANALYTICS — insightful charts for center managers
+// ============================================================================
+// Chart.js instances are kept here so we can destroy() the old chart before
+// redrawing on the same <canvas> each time this tab is opened — otherwise
+// Chart.js stacks a new chart on top of the old one.
+const chartInstances = {};
+
+function renderChart(canvasId, config) {
+  const canvas = $(canvasId);
+  if (!canvas) return;
+  if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+  chartInstances[canvasId] = new Chart(canvas.getContext("2d"), config);
+}
+
+const CHART_COLORS = ["#0e6b64", "#d97a2b", "#2563eb", "#be185d", "#7c3aed", "#059669", "#ca8a04", "#dc2626"];
+
+async function loadAnalytics() {
+  const statGrid = $("analyticsStatGrid");
+  statGrid.innerHTML = `<div class="state-block"><div class="spinner-lg"></div>Loading analytics...</div>`;
+
+  // Reservation-level data (one row per reservation) — used for the time
+  // series, grade breakdown, and gender split, so a reservation with
+  // multiple lessons doesn't get double-counted in those charts.
+  const { data: reservations } = await supabaseClient
+    .from("reservations")
+    .select("id, created_at, grade_id, grades(name), students(gender)")
+    .eq("status", "confirmed")
+    .order("created_at", { ascending: false })
+    .limit(3000);
+
+  // Lesson-level data (one row per booked subject/teacher/slot) — used for
+  // subject popularity, teacher popularity, and day-of-week popularity,
+  // where each booked lesson should count separately.
+  const { data: items } = await supabaseClient
+    .from("reservation_items")
+    .select("subjects(name), teachers(full_name), lesson_slots(day_of_week), reservations!inner(status)")
+    .eq("reservations.status", "confirmed")
+    .limit(6000);
+
+  // Slot capacity data — used for the utilization chart.
+  const { data: slots } = await supabaseClient.from("lesson_slots").select("id, capacity").eq("active", true);
+  const { data: confirmedItems } = await supabaseClient
+    .from("reservation_items")
+    .select("slot_id, reservations!inner(status)")
+    .eq("reservations.status", "confirmed");
+
+  const countBySlot = {};
+  (confirmedItems || []).forEach((i) => { countBySlot[i.slot_id] = (countBySlot[i.slot_id] || 0) + 1; });
+  const totalCapacity = (slots || []).reduce((sum, s) => sum + s.capacity, 0);
+  const totalBooked = (slots || []).reduce((sum, s) => sum + Math.min(countBySlot[s.id] || 0, s.capacity), 0);
+  const utilizationPct = totalCapacity ? Math.round((totalBooked / totalCapacity) * 100) : 0;
+
+  const uniqueStudents = new Set((reservations || []).map((r) => r.id)).size;
+  const totalLessonsBooked = (items || []).length;
+  const avgLessonsPerStudent = uniqueStudents ? (totalLessonsBooked / uniqueStudents).toFixed(1) : "0";
+
+  statGrid.innerHTML = `
+    ${statCard(reservations?.length ?? 0, "Confirmed Reservations")}
+    ${statCard(totalLessonsBooked, "Lessons Booked")}
+    ${statCard(avgLessonsPerStudent, "Avg. Lessons / Student")}
+    ${statCard(`${utilizationPct}%`, "Overall Slot Utilization")}
+  `;
+
+  renderTimelineChart(reservations || []);
+  renderByGradeChart(reservations || []);
+  renderBySubjectChart(items || []);
+  renderByTeacherChart(items || []);
+  renderByDayChart(items || []);
+  renderGenderChart(reservations || []);
+  renderUtilizationChart(totalBooked, totalCapacity);
+}
+
+function renderTimelineChart(reservations) {
+  const days = [];
+  const countByDate = {};
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    days.push(key);
+    countByDate[key] = 0;
+  }
+  reservations.forEach((r) => {
+    const key = new Date(r.created_at).toISOString().slice(0, 10);
+    if (key in countByDate) countByDate[key]++;
+  });
+
+  renderChart("chartTimeline", {
+    type: "line",
+    data: {
+      labels: days.map((d) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })),
+      datasets: [{
+        label: "Reservations",
+        data: days.map((d) => countByDate[d]),
+        borderColor: CHART_COLORS[0],
+        backgroundColor: "rgba(14, 107, 100, 0.12)",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+    },
+  });
+}
+
+function renderByGradeChart(reservations) {
+  const countByGrade = {};
+  reservations.forEach((r) => {
+    const name = r.grades?.name || "Unknown";
+    countByGrade[name] = (countByGrade[name] || 0) + 1;
+  });
+  const labels = Object.keys(countByGrade);
+  const data = labels.map((l) => countByGrade[l]);
+
+  renderChart("chartByGrade", {
+    type: "bar",
+    data: { labels, datasets: [{ data, backgroundColor: CHART_COLORS[0] }] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { autoSkip: false, maxRotation: 40, minRotation: 0, font: { size: 10 } } } },
+    },
+  });
+}
+
+function renderBySubjectChart(items) {
+  const countBySubject = {};
+  items.forEach((i) => {
+    const name = i.subjects?.name || "Unknown";
+    countBySubject[name] = (countBySubject[name] || 0) + 1;
+  });
+  const sorted = Object.entries(countBySubject).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  renderChart("chartBySubject", {
+    type: "bar",
+    data: {
+      labels: sorted.map((s) => s[0]),
+      datasets: [{ data: sorted.map((s) => s[1]), backgroundColor: CHART_COLORS[1] }],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
+    },
+  });
+}
+
+function renderByTeacherChart(items) {
+  const countByTeacher = {};
+  items.forEach((i) => {
+    const name = i.teachers?.full_name || "Unknown";
+    countByTeacher[name] = (countByTeacher[name] || 0) + 1;
+  });
+  const sorted = Object.entries(countByTeacher).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  renderChart("chartByTeacher", {
+    type: "bar",
+    data: {
+      labels: sorted.map((s) => s[0]),
+      datasets: [{ data: sorted.map((s) => s[1]), backgroundColor: CHART_COLORS[2] }],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
+    },
+  });
+}
+
+function renderByDayChart(items) {
+  const counts = new Array(7).fill(0);
+  items.forEach((i) => {
+    if (i.lesson_slots && typeof i.lesson_slots.day_of_week === "number") {
+      counts[i.lesson_slots.day_of_week]++;
+    }
+  });
+
+  renderChart("chartByDay", {
+    type: "bar",
+    data: {
+      labels: DAY_NAMES.map((d) => d.slice(0, 3)),
+      datasets: [{ data: counts, backgroundColor: CHART_COLORS[4] }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+    },
+  });
+}
+
+function renderGenderChart(reservations) {
+  let male = 0, female = 0;
+  reservations.forEach((r) => {
+    if (r.students?.gender === "male") male++;
+    else if (r.students?.gender === "female") female++;
+  });
+
+  renderChart("chartGender", {
+    type: "doughnut",
+    data: {
+      labels: ["Male", "Female"],
+      datasets: [{ data: [male, female], backgroundColor: [CHART_COLORS[2], CHART_COLORS[3]] }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" } },
+    },
+  });
+}
+
+function renderUtilizationChart(booked, capacity) {
+  const remaining = Math.max(capacity - booked, 0);
+  renderChart("chartUtilization", {
+    type: "doughnut",
+    data: {
+      labels: ["Booked Seats", "Remaining Seats"],
+      datasets: [{ data: [booked, remaining], backgroundColor: [CHART_COLORS[0], "#e5e7eb"] }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" } },
+    },
+  });
 }
 
 // ============================================================================
