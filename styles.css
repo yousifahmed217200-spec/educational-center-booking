@@ -29,6 +29,15 @@
 
 * { box-sizing: border-box; }
 
+/* CRITICAL: force the native `hidden` attribute to always win over any
+   display:flex/block rules elsewhere. Without this, elements can stay
+   visible even when JS sets `.hidden = true`, because an author
+   stylesheet's `display` declaration on a class selector overrides the
+   user-agent's default `[hidden]{display:none}` rule. */
+[hidden] {
+  display: none !important;
+}
+
 html, body {
   margin: 0;
   padding: 0;
