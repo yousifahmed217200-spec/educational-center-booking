@@ -38,6 +38,7 @@
     <div class="admin-sidebar__brand">Admin</div>
     <nav class="admin-nav">
       <button class="admin-nav__item is-active" data-tab="dashboard">Dashboard</button>
+      <button class="admin-nav__item" data-tab="analytics">Analytics</button>
       <button class="admin-nav__item" data-tab="reservations">Reservations</button>
       <button class="admin-nav__item" data-tab="teachers">Teachers</button>
       <button class="admin-nav__item" data-tab="subjects">Subjects</button>
@@ -53,6 +54,45 @@
     <section class="admin-tab" id="tab-dashboard">
       <h2 class="view-heading">Dashboard</h2>
       <div class="stat-grid" id="statGrid"></div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section class="admin-tab" id="tab-analytics" hidden>
+      <h2 class="view-heading">Analytics</h2>
+      <p class="view-subheading">Insights into bookings, popularity, and capacity across the center.</p>
+
+      <div class="stat-grid" id="analyticsStatGrid"></div>
+
+      <div class="chart-grid">
+        <div class="chart-card chart-card--wide">
+          <div class="chart-card__title">Reservations Over Time (last 14 days)</div>
+          <div class="chart-card__canvas-wrap"><canvas id="chartTimeline"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card__title">Reservations by Grade</div>
+          <div class="chart-card__canvas-wrap"><canvas id="chartByGrade"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card__title">Most Popular Subjects</div>
+          <div class="chart-card__canvas-wrap"><canvas id="chartBySubject"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card__title">Top Teachers by Bookings</div>
+          <div class="chart-card__canvas-wrap"><canvas id="chartByTeacher"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card__title">Busiest Days of the Week</div>
+          <div class="chart-card__canvas-wrap"><canvas id="chartByDay"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card__title">Gender Distribution</div>
+          <div class="chart-card__canvas-wrap"><canvas id="chartGender"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card__title">Slot Capacity Utilization</div>
+          <div class="chart-card__canvas-wrap"><canvas id="chartUtilization"></canvas></div>
+        </div>
+      </div>
     </section>
 
     <!-- RESERVATIONS -->
@@ -129,6 +169,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>
