@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Educational Center — Lesson Booking</title>
-<meta name="description" content="Book private lessons — choose your grade, subjects, teachers and schedule.">
+<title>المركز التعليمي — حجز الحصص</title>
+<meta name="description" content="احجز حصصك الخاصة — اختر الصف والمواد والمعلمين والموعد المناسب لك.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -15,8 +15,8 @@
 
   <!-- ============================ HEADER / PROGRESS ============================ -->
   <header class="app-header" id="appHeader" hidden>
-    <div class="app-header__title" id="centerNameHeader">Educational Center</div>
-    <nav class="progress-track" id="progressTrack" aria-label="Booking progress"></nav>
+    <div class="app-header__title" id="centerNameHeader">المركز التعليمي</div>
+    <nav class="progress-track" id="progressTrack" aria-label="مراحل الحجز"></nav>
   </header>
 
   <!-- ============================ MAIN ============================ -->
@@ -24,64 +24,92 @@
 
     <!-- ---------- STEP 0: WELCOME ---------- -->
     <section class="view welcome-view" id="view-welcome" data-step="welcome">
-      <div class="welcome-badge" id="welcomeBadge">EC</div>
-      <h1>Welcome to <span id="welcomeCenterName">Educational Center</span></h1>
-      <p id="welcomeTagline">Book your lessons easily and choose the subjects, teachers and schedules that suit you.</p>
-      <button class="btn btn-primary" style="max-width:280px;" id="btnStartRegistration" type="button">
-        Start Registration
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 320 260" class="hero-art__svg">
+          <defs>
+            <linearGradient id="blobGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="var(--color-primary)"/>
+              <stop offset="100%" stop-color="var(--color-primary-dark)"/>
+            </linearGradient>
+          </defs>
+          <circle class="hero-blob" cx="160" cy="130" r="110" fill="url(#blobGrad)" opacity="0.12"/>
+          <circle class="hero-dot hero-dot--1" cx="60" cy="60" r="10" fill="var(--color-accent)"/>
+          <circle class="hero-dot hero-dot--2" cx="270" cy="70" r="7" fill="var(--color-primary)"/>
+          <circle class="hero-dot hero-dot--3" cx="255" cy="200" r="12" fill="var(--color-accent)" opacity="0.7"/>
+          <!-- open book -->
+          <g class="hero-book" transform="translate(95,95)">
+            <path d="M65 0C45 0 25 6 10 16v96c15-10 35-16 55-16s40 6 55 16V16C105 6 85 0 65 0Z" fill="var(--color-surface)" stroke="var(--color-primary)" stroke-width="4"/>
+            <line x1="65" y1="4" x2="65" y2="108" stroke="var(--color-primary)" stroke-width="4"/>
+            <line x1="28" y1="30" x2="52" y2="26" stroke="var(--color-primary)" stroke-width="3" stroke-linecap="round"/>
+            <line x1="28" y1="46" x2="52" y2="42" stroke="var(--color-primary)" stroke-width="3" stroke-linecap="round"/>
+            <line x1="78" y1="26" x2="102" y2="30" stroke="var(--color-primary)" stroke-width="3" stroke-linecap="round"/>
+            <line x1="78" y1="42" x2="102" y2="46" stroke="var(--color-primary)" stroke-width="3" stroke-linecap="round"/>
+          </g>
+          <!-- graduation cap -->
+          <g class="hero-cap" transform="translate(180,40)">
+            <path d="M30 0 60 14 30 28 0 14Z" fill="var(--color-accent)"/>
+            <path d="M12 19v14c0 5 8 9 18 9s18-4 18-9V19" stroke="var(--color-accent)" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <line x1="56" y1="15" x2="56" y2="33" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+      <h1>مرحبًا بكم في <span id="welcomeCenterName">المركز التعليمي</span></h1>
+      <p id="welcomeTagline">احجز حصصك بسهولة، واختر المواد والمعلمين والمواعيد التي تناسبك.</p>
+      <button class="btn btn-primary btn-hero" id="btnStartRegistration" type="button">
+        ابدأ التسجيل
       </button>
     </section>
 
     <!-- ---------- STEP 1: STUDENT INFORMATION ---------- -->
     <section class="view" id="view-student" data-step="student" hidden>
-      <h2 class="view-heading">Student Information</h2>
-      <p class="view-subheading">Tell us a bit about the student so we can set up the booking.</p>
+      <h2 class="view-heading">بيانات الطالب</h2>
+      <p class="view-subheading">أخبرنا القليل عن الطالب حتى نبدأ عملية الحجز.</p>
 
       <form id="formStudent" novalidate>
         <div class="form-group">
-          <label class="form-label" for="fullName">Full Name</label>
+          <label class="form-label" for="fullName">الاسم الكامل</label>
           <input class="form-input" type="text" id="fullName" name="fullName" autocomplete="name" required>
           <div class="form-error" id="err-fullName" role="alert"></div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="mobile">Mobile Number</label>
+          <label class="form-label" for="mobile">رقم موبايل الطالب</label>
           <input class="form-input" type="tel" id="mobile" name="mobile" inputmode="tel" placeholder="01012345678" autocomplete="tel" required>
-          <div class="form-hint">Egyptian mobile — e.g. 010xxxxxxxx, 011xxxxxxxx, 012xxxxxxxx, 015xxxxxxxx</div>
+          <div class="form-hint">رقم مصري — مثال: 010xxxxxxxx، 011xxxxxxxx، 012xxxxxxxx، 015xxxxxxxx</div>
           <div class="form-error" id="err-mobile" role="alert"></div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="age">Age</label>
+          <label class="form-label" for="age">العمر</label>
           <input class="form-input" type="number" id="age" name="age" inputmode="numeric" min="3" max="100" required>
           <div class="form-error" id="err-age" role="alert"></div>
         </div>
 
         <div class="form-group">
           <fieldset>
-            <legend>Gender</legend>
-            <div class="radio-row" id="genderRow" role="radiogroup" aria-label="Gender">
-              <div class="radio-pill" data-value="male" tabindex="0" role="radio" aria-checked="false">Male</div>
-              <div class="radio-pill" data-value="female" tabindex="0" role="radio" aria-checked="false">Female</div>
+            <legend>النوع</legend>
+            <div class="radio-row" id="genderRow" role="radiogroup" aria-label="النوع">
+              <div class="radio-pill" data-value="male" tabindex="0" role="radio" aria-checked="false">ذكر</div>
+              <div class="radio-pill" data-value="female" tabindex="0" role="radio" aria-checked="false">أنثى</div>
             </div>
           </fieldset>
           <div class="form-error" id="err-gender" role="alert"></div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="parentName">Parent / Guardian Name</label>
+          <label class="form-label" for="parentName">اسم ولي الأمر</label>
           <input class="form-input" type="text" id="parentName" name="parentName" autocomplete="off" required>
           <div class="form-error" id="err-parentName" role="alert"></div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="parentMobile">Parent / Guardian Mobile Number</label>
+          <label class="form-label" for="parentMobile">رقم موبايل ولي الأمر</label>
           <input class="form-input" type="tel" id="parentMobile" name="parentMobile" inputmode="tel" placeholder="01098765432" autocomplete="off" required>
           <div class="form-error" id="err-parentMobile" role="alert"></div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="email">Email Address <span class="optional-tag">(optional)</span></label>
+          <label class="form-label" for="email">البريد الإلكتروني <span class="optional-tag">(اختياري)</span></label>
           <input class="form-input" type="email" id="email" name="email" autocomplete="email">
           <div class="form-error" id="err-email" role="alert"></div>
         </div>
@@ -90,68 +118,75 @@
 
     <!-- ---------- STEP 2: GRADE ---------- -->
     <section class="view" id="view-grade" data-step="grade" hidden>
-      <h2 class="view-heading">Select Grade</h2>
-      <p class="view-subheading">Choose the student's current grade.</p>
+      <h2 class="view-heading">اختر الصف الدراسي</h2>
+      <p class="view-subheading">حدد الصف الدراسي الحالي للطالب.</p>
       <div id="gradeList"></div>
     </section>
 
     <!-- ---------- STEP 3: SUBJECTS ---------- -->
     <section class="view" id="view-subjects" data-step="subjects" hidden>
-      <h2 class="view-heading">Select Subjects</h2>
-      <p class="view-subheading">Choose one or more subjects for <span id="subjectsGradeName"></span>.</p>
+      <h2 class="view-heading">اختر المواد</h2>
+      <p class="view-subheading">اختر مادة واحدة أو أكثر لـ <span id="subjectsGradeName"></span>.</p>
       <div id="subjectList"></div>
     </section>
 
     <!-- ---------- STEP 4: TEACHERS ---------- -->
     <section class="view" id="view-teachers" data-step="teachers" hidden>
-      <h2 class="view-heading">Select Teachers</h2>
-      <p class="view-subheading">Choose one teacher for each subject.</p>
+      <h2 class="view-heading">اختر المعلمين</h2>
+      <p class="view-subheading">اختر معلمًا واحدًا لكل مادة.</p>
       <div id="teacherGroups"></div>
     </section>
 
     <!-- ---------- STEP 5: SCHEDULE / SLOTS ---------- -->
     <section class="view" id="view-slots" data-step="slots" hidden>
-      <h2 class="view-heading">Select Lesson Times</h2>
-      <p class="view-subheading">Choose a slot for each subject with your chosen teacher.</p>
+      <h2 class="view-heading">اختر مواعيد الحصص</h2>
+      <p class="view-subheading">اختر موعدًا لكل مادة مع المعلم الذي اخترته.</p>
       <div id="slotGroups"></div>
     </section>
 
     <!-- ---------- STEP 6: REVIEW ---------- -->
     <section class="view" id="view-review" data-step="review" hidden>
-      <h2 class="view-heading">Reservation Summary</h2>
-      <p class="view-subheading">Please review your details before confirming.</p>
+      <h2 class="view-heading">مراجعة الحجز</h2>
+      <p class="view-subheading">يرجى مراجعة بياناتك قبل التأكيد.</p>
       <div id="reviewContent"></div>
       <div id="reviewErrorBanner"></div>
     </section>
 
     <!-- ---------- SUCCESS ---------- -->
     <section class="view success-view" id="view-success" data-step="success" hidden>
-      <div class="success-check">✓</div>
-      <h2 class="view-heading" style="text-align:center;">Reservation Completed</h2>
+      <div class="success-art" id="successArt" aria-hidden="true">
+        <svg viewBox="0 0 120 120" class="success-check-svg">
+          <circle cx="60" cy="60" r="54" fill="var(--color-success-bg)"/>
+          <circle cx="60" cy="60" r="54" fill="none" stroke="var(--color-success)" stroke-width="4" opacity="0.25"/>
+          <path id="successCheckPath" d="M35 62 L52 79 L86 42" fill="none" stroke="var(--color-success)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="confetti" id="confettiContainer"></div>
+      </div>
+      <h2 class="view-heading" style="text-align:center;">تم الحجز بنجاح</h2>
       <p class="view-subheading" style="text-align:center;" id="successThankYou"></p>
 
       <div class="reservation-code-box">
-        <div class="reservation-code-box__label">Reservation Number</div>
+        <div class="reservation-code-box__label">رقم الحجز</div>
         <div class="reservation-code-box__value" id="successReservationCode"></div>
       </div>
 
-      <div style="text-align:left;">
-        <div class="summary-section__title">Your Lessons</div>
+      <div style="text-align:start;">
+        <div class="summary-section__title">حصصك</div>
         <div id="successLessons"></div>
       </div>
 
-      <p class="view-subheading" style="margin-top:20px;">The educational center will contact you if needed.</p>
-      <button class="btn btn-secondary" id="btnNewReservation" type="button">Make Another Reservation</button>
+      <p class="view-subheading" style="margin-top:20px;">سيتواصل معك المركز التعليمي عند الحاجة.</p>
+      <button class="btn btn-secondary" id="btnNewReservation" type="button">إجراء حجز جديد</button>
     </section>
 
   </main>
 
   <!-- ============================ FOOTER NAV ============================ -->
   <footer class="step-footer" id="stepFooter" hidden>
-    <button class="btn btn-secondary" id="btnBack" type="button">← Back</button>
+    <button class="btn btn-secondary" id="btnBack" type="button">رجوع</button>
     <button class="btn btn-primary" id="btnNext" type="button">
       <span class="btn-spinner"></span>
-      <span class="btn-label">Continue</span>
+      <span class="btn-label">متابعة</span>
     </button>
   </footer>
 
