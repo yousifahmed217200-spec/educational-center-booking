@@ -107,6 +107,38 @@
 }
 .admin-tab__action { width: auto; padding: 10px 18px; min-height: 40px; font-size: 14px; }
 
+/* ---------------------------------------------------------------------------
+   ANALYTICS CHARTS
+--------------------------------------------------------------------------- */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.chart-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.chart-card--wide { grid-column: 1 / -1; }
+.chart-card__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+.chart-card__canvas-wrap {
+  position: relative;
+  height: 260px;
+}
+.chart-card--wide .chart-card__canvas-wrap { height: 240px; }
+
 .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .btn-tiny {
   width: auto;
