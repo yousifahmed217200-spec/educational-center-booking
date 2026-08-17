@@ -157,6 +157,21 @@
         <h2 class="view-heading">Lesson Slots</h2>
         <button class="btn btn-primary admin-tab__action" id="btnAddSlot">+ Add Slot</button>
       </div>
+      <div class="admin-filters" id="slotFilters">
+        <select class="form-select" id="slotFilterGrade"><option value="">All Grades</option></select>
+        <select class="form-select" id="slotFilterSubject"><option value="">All Subjects</option></select>
+        <select class="form-select" id="slotFilterTeacher"><option value="">All Teachers</option></select>
+        <select class="form-select" id="slotFilterDay">
+          <option value="">All Days</option>
+          <option value="0">Sunday</option>
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+        </select>
+      </div>
       <div class="admin-table-wrap"><table class="admin-table" id="slotsTable"></table></div>
     </section>
   </main>
