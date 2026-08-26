@@ -852,9 +852,8 @@ async function loadAssignments() {
 }
 
 $("btnAddAssignment").addEventListener("click", async () => {
-  const [{ data: grades }, { data: subjects }, { data: teachers }] = await Promise.all([
+  const [{ data: grades }, { data: teachers }] = await Promise.all([
     supabaseClient.from("grades").select("id, name").eq("active", true).order("display_order"),
-    supabaseClient.from("subjects").select("id, name").eq("active", true).order("name"),
     supabaseClient.from("teachers").select("id, full_name").eq("active", true).order("full_name"),
   ]);
 
@@ -870,10 +869,10 @@ $("btnAddAssignment").addEventListener("click", async () => {
       </div>
       <div class="form-group">
         <label class="form-label" for="assignSubject">Subject</label>
-        <select class="form-select" id="assignSubject" required>
-          <option value="">Select a subject</option>
-          ${(subjects || []).map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("")}
+        <select class="form-select" id="assignSubject" required disabled>
+          <option value="">Select a grade first</option>
         </select>
+        <div class="form-hint">Only subjects already linked to the chosen grade (Subjects tab → Link to Grades) appear here — this keeps teacher assignments from pointing at a subject/grade pair students can't actually see.</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="assignTeacher">Teacher</label>
@@ -889,6 +888,47 @@ $("btnAddAssignment").addEventListener("click", async () => {
       </div>
     </form>
   `);
+
+  // Re-populate the Subject dropdown whenever the Grade changes, restricted
+  // to subjects actually linked to that grade via subject_grades. This is
+  // the fix for the "orphaned assignment" bug: previously ANY active
+  // subject could be picked for ANY grade here, even if that subject was
+  // never added to the grade's subject list — producing a teacher
+  // assignment students could never actually reach.
+  $("assignGrade").addEventListener("change", async () => {
+    const subjectSelect = $("assignSubject");
+    const gradeId = $("assignGrade").value;
+
+    if (!gradeId) {
+      subjectSelect.innerHTML = `<option value="">Select a grade first</option>`;
+      subjectSelect.disabled = true;
+      return;
+    }
+
+    subjectSelect.disabled = true;
+    subjectSelect.innerHTML = `<option value="">Loading subjects...</option>`;
+
+    const { data, error } = await supabaseClient
+      .from("subject_grades")
+      .select("subjects!inner(id, name, active)")
+      .eq("grade_id", gradeId).eq("active", true).eq("subjects.active", true);
+
+    if (error) {
+      subjectSelect.innerHTML = `<option value="">Could not load subjects</option>`;
+      return;
+    }
+
+    const subjects = (data || []).map((row) => row.subjects);
+    if (subjects.length === 0) {
+      subjectSelect.innerHTML = `<option value="">No subjects linked to this grade yet</option>`;
+      return;
+    }
+
+    subjectSelect.innerHTML =
+      `<option value="">Select a subject</option>` +
+      subjects.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+    subjectSelect.disabled = false;
+  });
 
   $("addAssignmentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
