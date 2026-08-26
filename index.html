@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>المركز التعليمي — حجز الحصص</title>
+<meta name="description" content="احجز حصصك الخاصة — اختر الصف والمواد والمعلمين والموعد المناسب لك.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- decorative floating background shapes -->
+<div class="bg-decor" aria-hidden="true">
+  <span class="bg-blob bg-blob--1"></span>
+  <span class="bg-blob bg-blob--2"></span>
+  <span class="bg-blob bg-blob--3"></span>
+</div>
+
+<div class="app-shell">
+
+  <!-- ============================ DESKTOP SIDE ART ============================ -->
+  <aside class="side-art" id="sideArt" aria-hidden="true">
+    <div class="side-art__icon-wrap">
+      <i data-lucide="graduation-cap" class="side-art__icon" id="sideArtIcon"></i>
+    </div>
+    <div class="side-art__caption" id="sideArtCaption">رحلتك التعليمية تبدأ من هنا</div>
+  </aside>
+
+  <div class="app-column">
+
+  <!-- ============================ HEADER / PROGRESS ============================ -->
+  <header class="app-header" id="appHeader" hidden>
+    <div class="app-header__row">
+      <div class="app-header__title" id="centerNameHeader">المركز التعليمي</div>
+    </div>
+    <nav class="stepper" id="stepperTrack" aria-label="مراحل الحجز"></nav>
+  </header>
+
+  <!-- ============================ MAIN ============================ -->
+  <main class="app-main" id="appMain">
+
+    <!-- ---------- STEP 0: WELCOME ---------- -->
+    <section class="view welcome-view" id="view-welcome" data-step="welcome">
+      <div class="hero-panel">
+        <div class="hero-art" aria-hidden="true">
+          <svg viewBox="0 0 320 240" class="hero-art__svg">
+            <defs>
+              <linearGradient id="blobGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
+              </linearGradient>
+            </defs>
+            <circle class="hero-blob" cx="160" cy="120" r="105" fill="url(#blobGrad)"/>
+            <circle class="hero-dot hero-dot--1" cx="55" cy="55" r="9" fill="var(--color-accent)"/>
+            <circle class="hero-dot hero-dot--2" cx="272" cy="65" r="6" fill="#fff" opacity="0.8"/>
+            <circle class="hero-dot hero-dot--3" cx="258" cy="190" r="11" fill="var(--color-accent)" opacity="0.85"/>
+            <g class="hero-book" transform="translate(95,85)">
+              <path d="M65 4C47 4 29 9 15 18v88c14-9 32-14 50-14s36 5 50 14V18C151 9 133 4 115 4" fill="#ffffff" stroke="var(--color-primary-dark)" stroke-width="4" transform="translate(-50,0)"/>
+              <line x1="65" y1="6" x2="65" y2="106" stroke="var(--color-primary-dark)" stroke-width="4"/>
+              <line x1="28" y1="30" x2="52" y2="26" stroke="var(--color-primary-dark)" stroke-width="3" stroke-linecap="round"/>
+              <line x1="28" y1="46" x2="52" y2="42" stroke="var(--color-primary-dark)" stroke-width="3" stroke-linecap="round"/>
+              <line x1="78" y1="26" x2="102" y2="30" stroke="var(--color-primary-dark)" stroke-width="3" stroke-linecap="round"/>
+              <line x1="78" y1="42" x2="102" y2="46" stroke="var(--color-primary-dark)" stroke-width="3" stroke-linecap="round"/>
+            </g>
+            <g class="hero-cap" transform="translate(178,30)">
+              <path d="M30 0 60 14 30 28 0 14Z" fill="var(--color-accent)"/>
+              <path d="M12 19v14c0 5 8 9 18 9s18-4 18-9V19" stroke="var(--color-accent)" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <line x1="56" y1="15" x2="56" y2="33" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+        <h1>مرحبًا بكم في<br><span id="welcomeCenterName">المركز التعليمي</span></h1>
+        <p id="welcomeTagline">رحلتك التعليمية تبدأ من هنا. احجز حصصك بسهولة، واختر المواد والمعلمين والمواعيد التي تناسبك.</p>
+      </div>
+      <button class="btn btn-primary btn-hero" id="btnStartRegistration" type="button">
+        <span>ابدأ الحجز</span>
+        <i data-lucide="arrow-left"></i>
+      </button>
+    </section>
+
+    <!-- ---------- STEP 1: STUDENT INFORMATION ---------- -->
+    <section class="view" id="view-student" data-step="student" hidden>
+      <div class="step-icon-badge"><i data-lucide="user-round"></i></div>
+      <h2 class="view-heading">بيانات الطالب</h2>
+      <p class="view-subheading" id="studentStepSubheading">أدخل بيانات الطالب لبدء رحلة الحجز.</p>
+      <div id="studentErrorBanner"></div>
+
+      <form id="formStudent" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="fullName">الاسم الكامل</label>
+          <input class="form-input" type="text" id="fullName" name="fullName" autocomplete="name" required>
+          <div class="form-error" id="err-fullName" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="mobile">رقم موبايل الطالب</label>
+          <input class="form-input" type="tel" id="mobile" name="mobile" inputmode="tel" placeholder="01012345678" autocomplete="tel" required>
+          <div class="form-hint">رقم مصري — مثال: 010xxxxxxxx، 011xxxxxxxx، 012xxxxxxxx، 015xxxxxxxx</div>
+          <div class="form-error" id="err-mobile" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <fieldset>
+            <legend>النوع</legend>
+            <div class="radio-row" id="genderRow" role="radiogroup" aria-label="النوع">
+              <div class="radio-pill" data-value="male" tabindex="0" role="radio" aria-checked="false">ذكر</div>
+              <div class="radio-pill" data-value="female" tabindex="0" role="radio" aria-checked="false">أنثى</div>
+            </div>
+          </fieldset>
+          <div class="form-error" id="err-gender" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="parentName">اسم ولي الأمر</label>
+          <input class="form-input" type="text" id="parentName" name="parentName" autocomplete="off" required>
+          <div class="form-error" id="err-parentName" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="parentMobile">رقم موبايل ولي الأمر</label>
+          <input class="form-input" type="tel" id="parentMobile" name="parentMobile" inputmode="tel" placeholder="01098765432" autocomplete="off" required>
+          <div class="form-error" id="err-parentMobile" role="alert"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">البريد الإلكتروني <span class="optional-tag">(اختياري)</span></label>
+          <input class="form-input" type="email" id="email" name="email" autocomplete="email">
+          <div class="form-error" id="err-email" role="alert"></div>
+        </div>
+      </form>
+    </section>
+
+    <!-- ---------- STEP 2: SCHOOL TRACK ---------- -->
+    <section class="view" id="view-track" data-step="track" hidden>
+      <div class="step-icon-badge"><i data-lucide="layout-grid"></i></div>
+      <h2 class="view-heading" id="trackStepHeading">نوع المدرسة</h2>
+      <p class="view-subheading">هل أنت في مدرسة عربي أم مدرسة لغات؟</p>
+      <div id="trackErrorBanner"></div>
+      <div id="trackList"></div>
+    </section>
+
+    <!-- ---------- STEP 3: GRADE ---------- -->
+    <section class="view" id="view-grade" data-step="grade" hidden>
+      <div class="step-icon-badge"><i data-lucide="school"></i></div>
+      <h2 class="view-heading" id="gradeStepHeading">في أي صف أنت؟</h2>
+      <p class="view-subheading">حدد الصف الدراسي الحالي.</p>
+      <div id="gradeErrorBanner"></div>
+      <div id="gradeList"></div>
+    </section>
+
+    <!-- ---------- STEP 4: SUBJECTS ---------- -->
+    <section class="view" id="view-subjects" data-step="subjects" hidden>
+      <div class="step-icon-badge"><i data-lucide="book-open"></i></div>
+      <h2 class="view-heading" id="subjectsStepHeading">ايه المواد اللي عايز تحجزها؟</h2>
+      <p class="view-subheading">اختر مادة واحدة أو أكثر لصف <span id="subjectsGradeName"></span>.</p>
+      <div id="subjectsErrorBanner"></div>
+      <div id="subjectList" class="card-grid"></div>
+    </section>
+
+    <!-- ---------- STEP 5: TEACHERS ---------- -->
+    <section class="view" id="view-teachers" data-step="teachers" hidden>
+      <div class="step-icon-badge"><i data-lucide="users-round"></i></div>
+      <h2 class="view-heading">مع من تريد أن تتعلم؟</h2>
+      <p class="view-subheading">اختر معلمًا واحدًا لكل مادة.</p>
+      <div id="teachersErrorBanner"></div>
+      <div id="teacherGroups"></div>
+    </section>
+
+    <!-- ---------- STEP 5: SCHEDULE / SLOTS ---------- -->
+    <section class="view" id="view-slots" data-step="slots" hidden>
+      <div class="step-icon-badge"><i data-lucide="calendar-clock"></i></div>
+      <h2 class="view-heading">متى تفضّل حصتك؟</h2>
+      <p class="view-subheading">اختر موعدًا لكل مادة مع المعلم الذي اخترته.</p>
+      <div id="slotsErrorBanner"></div>
+      <div id="slotGroups"></div>
+    </section>
+
+    <!-- ---------- STEP 6: REVIEW ---------- -->
+    <section class="view" id="view-review" data-step="review" hidden>
+      <div class="step-icon-badge"><i data-lucide="clipboard-check"></i></div>
+      <h2 class="view-heading" id="reviewStepHeading">راجع حجزك</h2>
+      <p class="view-subheading">تأكد من صحة كل شيء قبل التأكيد النهائي.</p>
+      <div id="reviewContent"></div>
+      <div id="reviewErrorBanner"></div>
+    </section>
+
+    <!-- ---------- SUCCESS ---------- -->
+    <section class="view success-view" id="view-success" data-step="success" hidden>
+      <div class="success-art" id="successArt" aria-hidden="true">
+        <svg viewBox="0 0 120 120" class="success-check-svg">
+          <circle cx="60" cy="60" r="54" fill="var(--color-success-bg)"/>
+          <circle cx="60" cy="60" r="54" fill="none" stroke="var(--color-success)" stroke-width="4" opacity="0.25"/>
+          <path id="successCheckPath" d="M35 62 L52 79 L86 42" fill="none" stroke="var(--color-success)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="confetti" id="confettiContainer"></div>
+      </div>
+      <h2 class="view-heading" style="text-align:center;">أنت جاهز! 🎉</h2>
+      <p class="view-subheading" style="text-align:center;" id="successThankYou"></p>
+
+      <div class="reservation-code-box">
+        <div class="reservation-code-box__label">رقم الحجز</div>
+        <div class="reservation-code-box__value" id="successReservationCode"></div>
+      </div>
+
+      <div style="text-align:start;">
+        <div class="summary-section__title">حصصك</div>
+        <div id="successLessons"></div>
+      </div>
+
+      <p class="view-subheading" style="margin-top:20px;">سيتواصل معك المركز التعليمي عند الحاجة.</p>
+      <button class="btn btn-secondary" id="btnNewReservation" type="button">
+        <i data-lucide="rotate-ccw"></i>
+        <span>إجراء حجز جديد</span>
+      </button>
+    </section>
+
+  </main>
+
+  <!-- ============================ FOOTER NAV ============================ -->
+  <footer class="step-footer" id="stepFooter" hidden>
+    <button class="btn btn-secondary btn-icon-only" id="btnBack" type="button" aria-label="رجوع">
+      <i data-lucide="arrow-right"></i>
+    </button>
+    <button class="btn btn-primary" id="btnNext" type="button">
+      <span class="btn-spinner"></span>
+      <span class="btn-label">متابعة</span>
+    </button>
+  </footer>
+
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
