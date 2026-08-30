@@ -826,7 +826,8 @@ async function handleConfirmReservation() {
 }
 
 function renderSuccessView(result) {
-  $("successThankYou").textContent = `أحسنت، ${result.student.full_name}! تم إتمام حجزك بنجاح.`;
+  const centerName = dataCache.centerSettings?.center_name || "سنتر ديار التعليمي";
+  $("successThankYou").textContent = `شكرًا لاختيارك ${centerName}`;
   $("successReservationCode").textContent = result.reservation_code;
 
   const lessonsEl = $("successLessons");
