@@ -83,7 +83,7 @@ const bookingState = {
 };
 
 const dataCache = {
-  grades: null,
+  gradesBySchoolType: {},
   subjectsByGradeAndSchoolType: {},
   teachersBySubjectGradeAndSchoolType: {},
   slotsByTeacherSubjectGradeAndSchoolType: {},
@@ -176,13 +176,16 @@ async function fetchCenterSettings() {
   return data;
 }
 
-// Grades are NOT filtered by school type -- the same grade list applies to
-// both مدرسة عربي and مدرسة لغات (see available_grades() in functions.sql).
-async function fetchGrades() {
-  if (dataCache.grades) return dataCache.grades;
-  const { data, error } = await supabaseClient.rpc("available_grades");
+// Grades are filtered to ONLY those with at least one actually-bookable
+// subject for the chosen school type (see available_grades_for_school_type
+// in functions.sql) -- otherwise a student could pick a grade and then hit
+// "no subjects available", which is exactly the confusing dead-end this
+// avoids.
+async function fetchGrades(schoolType) {
+  if (dataCache.gradesBySchoolType[schoolType]) return dataCache.gradesBySchoolType[schoolType];
+  const { data, error } = await supabaseClient.rpc("available_grades_for_school_type", { p_school_type: schoolType });
   if (error) throw error;
-  dataCache.grades = data;
+  dataCache.gradesBySchoolType[schoolType] = data;
   return data;
 }
 
@@ -494,11 +497,11 @@ async function renderGradeStep() {
   $("gradeStepHeading").textContent = firstName() ? `في أي صف أنت يا ${firstName()}؟` : "في أي صف أنت؟";
   const listEl = $("gradeList");
   listEl.innerHTML = `<div class="state-block"><div class="spinner-lg"></div>جاري تحميل الصفوف الدراسية...</div>`;
-  const grades = await fetchGrades();
+  const grades = await fetchGrades(bookingState.schoolType);
   listEl.innerHTML = "";
 
   if (!grades.length) {
-    listEl.innerHTML = emptyState("school", "لا توجد صفوف دراسية متاحة", "يرجى التواصل مع المركز التعليمي للمساعدة.");
+    listEl.innerHTML = emptyState("school", "لا توجد صفوف متاحة", "لا توجد صفوف بها مواد قابلة للحجز حاليًا لهذا النوع من المدارس. جرّب نوع المدرسة الآخر.");
     refreshIcons();
     return;
   }
