@@ -1082,14 +1082,62 @@ async function loadSlots() {
         <td>${escapeHtml(s.teachers?.full_name || "—")}</td>
         <td>${DAY_NAMES[s.day_of_week]}</td>
         <td>${s.start_time?.slice(0,5)} - ${s.end_time?.slice(0,5)}</td>
-        <td>${s.capacity}</td>
+        <td id="capacity-${s.id}">${s.capacity}</td>
         <td>${booked}</td>
         <td><span class="status-pill ${s.active ? (full ? "pending" : "confirmed") : "cancelled"}">${!s.active ? "Disabled" : full ? "Full" : "Available"}</span></td>
         <td class="row-actions">
+          <button class="btn-tiny" onclick="editSlotCapacity('${s.id}', ${s.capacity}, ${booked})">Edit Capacity</button>
           <button class="btn-tiny" onclick="toggleActive('lesson_slots', '${s.id}', ${s.active})">${s.active ? "Disable" : "Enable"}</button>
         </td>
       </tr>`;
     }).join("")}</tbody>`;
+}
+
+// Lets an admin change a slot's capacity in place (e.g. a group that
+// started with 5 seats can be widened to 8, or narrowed down). The new
+// capacity is validated to never go below the number of students already
+// CONFIRMED into that slot -- shrinking below that would silently
+// overbook the group relative to its own stated capacity.
+async function editSlotCapacity(slotId, currentCapacity, bookedCount) {
+  openModal(`
+    <h3>Edit Capacity</h3>
+    <form id="editCapacityForm">
+      <div class="form-group">
+        <label class="form-label" for="newCapacity">New Capacity</label>
+        <input class="form-input" id="newCapacity" type="number" min="${bookedCount || 1}" value="${currentCapacity}" required>
+        <div class="form-hint">${bookedCount} student(s) already confirmed in this slot -- capacity cannot be set below that.</div>
+      </div>
+      <div id="editCapacityError"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  `);
+
+  $("editCapacityForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const errBox = $("editCapacityError");
+    errBox.innerHTML = "";
+    const newCapacity = Number($("newCapacity").value);
+
+    if (!Number.isInteger(newCapacity) || newCapacity < 1) {
+      errBox.innerHTML = `<div class="banner banner-error">Please enter a valid capacity (a whole number of at least 1).</div>`;
+      return;
+    }
+    if (newCapacity < bookedCount) {
+      errBox.innerHTML = `<div class="banner banner-error">Capacity cannot be lower than the ${bookedCount} student(s) already confirmed in this slot.</div>`;
+      return;
+    }
+
+    const { error } = await supabaseClient.from("lesson_slots").update({ capacity: newCapacity }).eq("id", slotId);
+    if (error) {
+      errBox.innerHTML = `<div class="banner banner-error">${escapeHtml(friendlyDbError(error))}</div>`;
+      return;
+    }
+    closeModal();
+    loadSlots();
+  });
 }
 
 $("btnAddSlot").addEventListener("click", async () => {
@@ -1205,6 +1253,7 @@ async function toggleActive(table, id, currentActive) {
 }
 window.toggleActive = toggleActive;
 window.closeModal = closeModal;
+window.editSlotCapacity = editSlotCapacity;
 
 // ----------------------------------------------------------------------------
 // INIT
