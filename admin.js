@@ -623,6 +623,7 @@ async function loadTeachers() {
         <td><span class="status-pill ${t.active ? "confirmed" : "cancelled"}">${t.active ? "Active" : "Inactive"}</span></td>
         <td class="row-actions">
           <button class="btn-tiny" onclick="toggleActive('teachers', '${t.id}', ${t.active})">${t.active ? "Deactivate" : "Activate"}</button>
+          <button class="btn-tiny is-danger" onclick="deleteRow('teachers', '${t.id}', '${escapeHtml(t.full_name).replace(/'/g, "\\'")}')">Delete</button>
         </td>
       </tr>`).join("")}
     </tbody>`;
@@ -684,6 +685,7 @@ async function loadSubjects() {
         <td><span class="status-pill ${s.active ? "confirmed" : "cancelled"}">${s.active ? "Active" : "Inactive"}</span></td>
         <td class="row-actions">
           <button class="btn-tiny" onclick="toggleActive('subjects', '${s.id}', ${s.active})">${s.active ? "Deactivate" : "Activate"}</button>
+          <button class="btn-tiny is-danger" onclick="deleteRow('subjects', '${s.id}', '${escapeHtml(s.name).replace(/'/g, "\\'")}')">Delete</button>
         </td>
       </tr>`).join("")}
     </tbody>`;
@@ -791,6 +793,7 @@ async function loadGrades() {
         <td><span class="status-pill ${g.active ? "confirmed" : "cancelled"}">${g.active ? "Active" : "Inactive"}</span></td>
         <td class="row-actions">
           <button class="btn-tiny" onclick="toggleActive('grades', '${g.id}', ${g.active})">${g.active ? "Deactivate" : "Activate"}</button>
+          <button class="btn-tiny is-danger" onclick="deleteRow('grades', '${g.id}', '${escapeHtml(g.name).replace(/'/g, "\\'")}')">Delete</button>
         </td>
       </tr>`).join("")}
     </tbody>`;
@@ -859,6 +862,7 @@ async function loadAssignments() {
         <td><span class="status-pill ${a.active ? "confirmed" : "cancelled"}">${a.active ? "Active" : "Inactive"}</span></td>
         <td class="row-actions">
           <button class="btn-tiny" onclick="toggleActive('teacher_subjects', '${a.id}', ${a.active})">${a.active ? "Deactivate" : "Activate"}</button>
+          <button class="btn-tiny is-danger" onclick="deleteRow('teacher_subjects', '${a.id}', '${escapeHtml(a.teachers?.full_name || "assignment").replace(/'/g, "\\'")} — ${escapeHtml(a.subjects?.name || "")}')">Delete</button>
         </td>
       </tr>`).join("")}
     </tbody>`;
@@ -1252,6 +1256,29 @@ async function toggleActive(table, id, currentActive) {
   loadTab(document.querySelector(".admin-nav__item.is-active").dataset.tab);
 }
 window.toggleActive = toggleActive;
+
+// Permanently deletes a row from the given table (teachers, subjects,
+// grades, or teacher_subjects/assignments). Unlike Deactivate, this cannot
+// be undone. If the row is still referenced elsewhere (e.g. a teacher with
+// existing assignments, or a subject/grade with lesson slots), the delete
+// will be rejected by a foreign key constraint -- in that case, deactivate
+// it instead of deleting it.
+async function deleteRow(table, id, label) {
+  const confirmed = confirm(`Delete "${label}"? This cannot be undone.`);
+  if (!confirmed) return;
+
+  const { error } = await supabaseClient.from(table).delete().eq("id", id);
+  if (error) {
+    if (error.code === "23503") {
+      alert(`Can't delete "${label}" because it's still linked to other records (e.g. assignments or lesson slots). Deactivate it instead, or remove those links first.`);
+    } else {
+      alert(friendlyDbError(error));
+    }
+    return;
+  }
+  loadTab(document.querySelector(".admin-nav__item.is-active").dataset.tab);
+}
+window.deleteRow = deleteRow;
 window.closeModal = closeModal;
 window.editSlotCapacity = editSlotCapacity;
 
