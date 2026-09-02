@@ -41,8 +41,8 @@
       <button class="admin-nav__item" data-tab="analytics">Analytics</button>
       <button class="admin-nav__item" data-tab="reservations">Reservations</button>
       <button class="admin-nav__item" data-tab="teachers">Teachers</button>
-      <button class="admin-nav__item" data-tab="subjects">Subjects</button>
       <button class="admin-nav__item" data-tab="grades">Grades</button>
+      <button class="admin-nav__item" data-tab="subjects">Subjects</button>
       <button class="admin-nav__item" data-tab="assignments">Assignments</button>
       <button class="admin-nav__item" data-tab="slots">Slots</button>
     </nav>
@@ -128,14 +128,6 @@
     </section>
 
     <!-- SUBJECTS -->
-    <section class="admin-tab" id="tab-subjects" hidden>
-      <div class="admin-tab__header">
-        <h2 class="view-heading">Subjects</h2>
-        <button class="btn btn-primary admin-tab__action" id="btnAddSubject">+ Add Subject</button>
-      </div>
-      <div class="admin-table-wrap"><table class="admin-table" id="subjectsTable"></table></div>
-    </section>
-
     <!-- GRADES -->
     <section class="admin-tab" id="tab-grades" hidden>
       <div class="admin-tab__header">
@@ -143,6 +135,14 @@
         <button class="btn btn-primary admin-tab__action" id="btnAddGrade">+ Add Grade</button>
       </div>
       <div class="admin-table-wrap"><table class="admin-table" id="gradesTable"></table></div>
+    </section>
+
+    <section class="admin-tab" id="tab-subjects" hidden>
+      <div class="admin-tab__header">
+        <h2 class="view-heading">Subjects</h2>
+        <button class="btn btn-primary admin-tab__action" id="btnAddSubject">+ Add Subject</button>
+      </div>
+      <div class="admin-table-wrap"><table class="admin-table" id="subjectsTable"></table></div>
     </section>
 
     <!-- ASSIGNMENTS (teacher + subject + grade links) -->
