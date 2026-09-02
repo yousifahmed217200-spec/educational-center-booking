@@ -242,6 +242,29 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
 
 .btn-hero { max-width: 280px; }
 
+.welcome-contact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+.welcome-contact__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.welcome-contact__item:hover { background: #d9ece9; }
+.welcome-contact__item i { width: 16px; height: 16px; }
+
 /* ---------------------------------------------------------------------------
    CARD GRID (subjects)
 --------------------------------------------------------------------------- */
