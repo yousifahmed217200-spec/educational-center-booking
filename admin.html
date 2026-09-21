@@ -13,22 +13,69 @@
 <!-- ================= LOGIN SCREEN ================= -->
 <div class="admin-login" id="loginScreen">
   <div class="admin-login__card">
-    <h1>Admin Login</h1>
-    <p class="admin-login__subtitle">Sign in to manage reservations, teachers, subjects and slots.</p>
-    <form id="loginForm">
-      <div class="form-group">
-        <label class="form-label" for="loginEmail">Email</label>
-        <input class="form-input" type="email" id="loginEmail" required autocomplete="username">
+
+    <!-- Panel 1: sign in -->
+    <div id="panelLogin">
+      <h1>Admin Login</h1>
+      <p class="admin-login__subtitle">Sign in to manage reservations, teachers, subjects and slots.</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email</label>
+          <input class="form-input" type="email" id="loginEmail" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input class="form-input" type="password" id="loginPassword" required autocomplete="current-password">
+        </div>
+        <div id="loginError"></div>
+        <button class="btn btn-primary" type="submit" id="btnLogin">
+          <span class="btn-spinner"></span><span class="btn-label">Sign In</span>
+        </button>
+      </form>
+      <div class="admin-login__links">
+        <button type="button" class="link-btn" id="btnForgot">Forgot password?</button>
       </div>
-      <div class="form-group">
-        <label class="form-label" for="loginPassword">Password</label>
-        <input class="form-input" type="password" id="loginPassword" required autocomplete="current-password">
+    </div>
+
+    <!-- Panel 2: ask for a reset link -->
+    <div id="panelForgot" hidden>
+      <h1>Reset password</h1>
+      <p class="admin-login__subtitle">Enter your admin email and we'll send you a link to choose a new password.</p>
+      <form id="forgotForm">
+        <div class="form-group">
+          <label class="form-label" for="forgotEmail">Email</label>
+          <input class="form-input" type="email" id="forgotEmail" required autocomplete="username">
+        </div>
+        <div id="forgotMsg"></div>
+        <button class="btn btn-primary" type="submit" id="btnSendReset">
+          <span class="btn-spinner"></span><span class="btn-label">Send reset link</span>
+        </button>
+      </form>
+      <div class="admin-login__links">
+        <button type="button" class="link-btn" id="btnBackToLogin">Back to sign in</button>
       </div>
-      <div id="loginError"></div>
-      <button class="btn btn-primary" type="submit" id="btnLogin">
-        <span class="btn-spinner"></span><span class="btn-label">Sign In</span>
-      </button>
-    </form>
+    </div>
+
+    <!-- Panel 3: choose a new password (opened from the link in the email) -->
+    <div id="panelRecovery" hidden>
+      <h1>Choose a new password</h1>
+      <p class="admin-login__subtitle">Enter your new password below (at least 8 characters).</p>
+      <form id="recoveryForm">
+        <div class="form-group">
+          <label class="form-label" for="newPassword">New password</label>
+          <input class="form-input" type="password" id="newPassword" required minlength="8" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="newPassword2">Confirm new password</label>
+          <input class="form-input" type="password" id="newPassword2" required minlength="8" autocomplete="new-password">
+        </div>
+        <div id="recoveryMsg"></div>
+        <button class="btn btn-primary" type="submit" id="btnSetPassword">
+          <span class="btn-spinner"></span><span class="btn-label">Save new password</span>
+        </button>
+      </form>
+    </div>
+
   </div>
 </div>
 
