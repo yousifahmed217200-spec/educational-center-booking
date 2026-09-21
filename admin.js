@@ -893,46 +893,47 @@ $("btnAddGrade").addEventListener("click", () => {
 // ============================================================================
 // ASSIGNMENTS (teacher_subjects: links teacher + subject + grade)
 // ============================================================================
-// Sort teachers by their actual name, ignoring the "مستر" / "مس" / "أ/" title.
-function teacherSortKey(name) {
-  return (name || "").replace(/^\s*(مستر|مس|ماستر)\s+/, "").replace(/^\s*[أا]\s*\/\s*/, "").trim();
+// Lower-cases and folds Arabic spelling variants (أ/إ/آ->ا, ى->ي, ة->ه), drops
+// diacritics and ALL spaces, so "احمد عبد الجواد" finds "مستر أحمد عبدالجواد".
+function normalizeSearch(s) {
+  return (s || "")
+    .toLowerCase()
+    .replace(/[\u064B-\u0652\u0640]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/\s+/g, "");
 }
 
-// Fills the teacher filter (keeps whatever was selected).
-async function populateAssignmentTeacherFilter() {
-  const select = $("filterAssignTeacher");
-  const current = select.value;
-  const { data } = await supabaseClient.from("teachers").select("id, full_name");
-  const teachers = (data || []).slice().sort((x, y) =>
-    teacherSortKey(x.full_name).localeCompare(teacherSortKey(y.full_name), "ar"));
-  select.innerHTML =
-    `<option value="">All Teachers</option>` +
-    teachers.map((t) => `<option value="${t.id}">${escapeHtml(t.full_name)}</option>`).join("");
-  select.value = current;
-  if (select.value !== current) select.value = "";   // selected teacher no longer exists
-}
+let assignmentsCache = [];
 
-async function loadAssignments({ refreshTeachers = true } = {}) {
+async function loadAssignments() {
   const table = $("assignmentsTable");
   table.innerHTML = `<tr><td>Loading...</td></tr>`;
-  if (refreshTeachers) await populateAssignmentTeacherFilter();
-
-  let query = supabaseClient
+  const { data } = await supabaseClient
     .from("teacher_subjects")
     .select("id, active, school_type, grades(name), subjects(name), teachers(full_name)")
     .order("id");
-  const teacherId = $("filterAssignTeacher").value;
-  if (teacherId) query = query.eq("teacher_id", teacherId);
+  assignmentsCache = data || [];
+  renderAssignments();
+}
 
-  const { data } = await query;
-  $("assignmentCount").textContent = `${(data || []).length} assignment${(data || []).length === 1 ? "" : "s"}`;
-  if (!data || data.length === 0) {
-    table.innerHTML = `<tbody><tr><td>No assignments${teacherId ? " for this teacher" : ""}.</td></tr></tbody>`;
+// Shows the cached assignments, filtered by the teacher search box.
+function renderAssignments() {
+  const table = $("assignmentsTable");
+  const term = normalizeSearch($("searchAssignTeacher").value);
+  const data = term
+    ? assignmentsCache.filter((a) => normalizeSearch(a.teachers?.full_name).includes(term))
+    : assignmentsCache;
+
+  $("assignmentCount").textContent = `${data.length} assignment${data.length === 1 ? "" : "s"}`;
+  if (data.length === 0) {
+    table.innerHTML = `<tbody><tr><td>${term ? "No assignments match this teacher search." : "No assignments yet."}</td></tr></tbody>`;
     return;
   }
   table.innerHTML = `
     <thead><tr><th>Teacher</th><th>Subject</th><th>Grade</th><th>School Type</th><th>Status</th><th>Actions</th></tr></thead>
-    <tbody>${(data || []).map((a) => `
+    <tbody>${data.map((a) => `
       <tr>
         <td>${escapeHtml(a.teachers?.full_name || "—")}</td>
         <td>${escapeHtml(a.subjects?.name || "—")}</td>
@@ -947,7 +948,7 @@ async function loadAssignments({ refreshTeachers = true } = {}) {
     </tbody>`;
 }
 
-$("filterAssignTeacher").addEventListener("change", () => loadAssignments({ refreshTeachers: false }));
+$("searchAssignTeacher").addEventListener("input", renderAssignments);
 
 $("btnAddAssignment").addEventListener("click", async () => {
   const [{ data: grades }, { data: teachers }] = await Promise.all([
