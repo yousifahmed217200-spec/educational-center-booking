@@ -25,45 +25,7 @@ function escapeHtml(str) { const d = document.createElement("div"); d.textConten
 // ----------------------------------------------------------------------------
 // AUTH
 // ----------------------------------------------------------------------------
-// --- Password reset state -----------------------------------------------------
-// When the admin clicks the link in the reset email, Supabase sends them back
-// to this page with a recovery token in the URL. That token also creates a
-// session, so we must show the "choose a new password" form BEFORE the admin
-// app, otherwise they would be signed straight in without changing anything.
-const urlHashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-let recoveryMode =
-  urlHashParams.get("type") === "recovery" ||
-  new URLSearchParams(window.location.search).has("code");
-const recoveryLinkError = urlHashParams.get("error_description") || (urlHashParams.get("error") ? "invalid" : "");
-
-function showPanel(name) {
-  $("panelLogin").hidden = name !== "login";
-  $("panelForgot").hidden = name !== "forgot";
-  $("panelRecovery").hidden = name !== "recovery";
-}
-
-supabaseClient.auth.onAuthStateChange((event) => {
-  if (event === "PASSWORD_RECOVERY") {
-    recoveryMode = true;
-    showLoginScreen();
-    showPanel("recovery");
-  }
-});
-
 async function checkSession() {
-  if (recoveryLinkError) {
-    history.replaceState(null, "", window.location.pathname);
-    showLoginScreen();
-    showPanel("forgot");
-    $("forgotMsg").innerHTML =
-      `<div class="banner banner-error">This reset link is invalid or has expired. Enter your email to get a new one.</div>`;
-    return;
-  }
-  if (recoveryMode) {
-    showLoginScreen();
-    showPanel("recovery");
-    return;
-  }
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     showAdminApp();
@@ -116,86 +78,7 @@ $("loginForm").addEventListener("submit", async (e) => {
 
 $("btnLogout").addEventListener("click", async () => {
   await supabaseClient.auth.signOut();
-  showPanel("login");
   showLoginScreen();
-});
-
-// ----------------------------------------------------------------------------
-// FORGOT PASSWORD  ->  email link  ->  choose a new password
-// ----------------------------------------------------------------------------
-function setBusy(btn, busy) {
-  btn.disabled = busy;
-  btn.classList.toggle("is-loading", busy);
-}
-
-$("btnForgot").addEventListener("click", () => {
-  $("forgotEmail").value = $("loginEmail").value.trim();
-  $("forgotMsg").innerHTML = "";
-  showPanel("forgot");
-});
-
-$("btnBackToLogin").addEventListener("click", () => showPanel("login"));
-
-$("forgotForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const box = $("forgotMsg");
-  const btn = $("btnSendReset");
-  box.innerHTML = "";
-  setBusy(btn, true);
-
-  const email = $("forgotEmail").value.trim();
-  // The reset link brings the admin back to THIS page.
-  // (This exact address must be listed under Supabase -> Authentication ->
-  //  URL Configuration -> Redirect URLs.)
-  const redirectTo = window.location.origin + window.location.pathname;
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
-
-  setBusy(btn, false);
-
-  if (error) {
-    box.innerHTML = `<div class="banner banner-error">Could not send the email: ${escapeHtml(error.message)}</div>`;
-    return;
-  }
-  // Same message whether or not the address exists (does not reveal which emails are admins).
-  box.innerHTML = `<div class="banner banner-success">If this email belongs to an account, a reset link has been sent. Check your inbox (and spam folder).</div>`;
-});
-
-$("recoveryForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const box = $("recoveryMsg");
-  const btn = $("btnSetPassword");
-  box.innerHTML = "";
-
-  const p1 = $("newPassword").value;
-  const p2 = $("newPassword2").value;
-  if (p1.length < 8) {
-    box.innerHTML = `<div class="banner banner-error">Password must be at least 8 characters.</div>`;
-    return;
-  }
-  if (p1 !== p2) {
-    box.innerHTML = `<div class="banner banner-error">The two passwords don't match.</div>`;
-    return;
-  }
-
-  setBusy(btn, true);
-  const { error } = await supabaseClient.auth.updateUser({ password: p1 });
-  setBusy(btn, false);
-
-  if (error) {
-    box.innerHTML = `<div class="banner banner-error">${escapeHtml(error.message)}</div>`;
-    return;
-  }
-
-  // Done: clear the token from the address bar, sign out, and ask for a normal login.
-  recoveryMode = false;
-  history.replaceState(null, "", window.location.pathname);
-  await supabaseClient.auth.signOut();
-  $("newPassword").value = "";
-  $("newPassword2").value = "";
-  $("loginPassword").value = "";
-  showPanel("login");
-  showLoginScreen();
-  $("loginError").innerHTML = `<div class="banner banner-success">Password changed. Please sign in with your new password.</div>`;
 });
 
 // ----------------------------------------------------------------------------
@@ -260,11 +143,11 @@ async function loadDashboard() {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const [{ count: totalReservations }, { count: todayReservations }, totalStudents, { data: slots }] =
+  const [{ count: totalReservations }, { count: todayReservations }, { count: totalStudents }, { data: slots }] =
     await Promise.all([
       supabaseClient.from("reservations").select("*", { count: "exact", head: true }).eq("status", "confirmed"),
       supabaseClient.from("reservations").select("*", { count: "exact", head: true }).eq("status", "confirmed").gte("created_at", todayStart.toISOString()),
-      countActiveStudents(),
+      supabaseClient.from("students").select("*", { count: "exact", head: true }),
       supabaseClient.from("lesson_slots").select("id, capacity"),
     ]);
 
@@ -289,26 +172,6 @@ async function loadDashboard() {
     ${statCard(availableSlots, "Available Slots")}
     ${statCard(fullSlots, "Full Slots")}
   `;
-}
-
-// "Active Students" = distinct students who currently hold at least one
-// CONFIRMED reservation. (It used to count every row in the students table,
-// so deleting/cancelling a reservation never changed the number.)
-async function countActiveStudents() {
-  const ids = new Set();
-  const pageSize = 1000;
-  for (let from = 0; ; from += pageSize) {
-    const { data, error } = await supabaseClient
-      .from("reservations")
-      .select("student_id")
-      .eq("status", "confirmed")
-      .order("id")
-      .range(from, from + pageSize - 1);
-    if (error || !data) break;
-    data.forEach((r) => ids.add(r.student_id));
-    if (data.length < pageSize) break;
-  }
-  return ids.size;
 }
 
 function statCard(value, label) {
@@ -1030,13 +893,43 @@ $("btnAddGrade").addEventListener("click", () => {
 // ============================================================================
 // ASSIGNMENTS (teacher_subjects: links teacher + subject + grade)
 // ============================================================================
-async function loadAssignments() {
+// Sort teachers by their actual name, ignoring the "مستر" / "مس" / "أ/" title.
+function teacherSortKey(name) {
+  return (name || "").replace(/^\s*(مستر|مس|ماستر)\s+/, "").replace(/^\s*[أا]\s*\/\s*/, "").trim();
+}
+
+// Fills the teacher filter (keeps whatever was selected).
+async function populateAssignmentTeacherFilter() {
+  const select = $("filterAssignTeacher");
+  const current = select.value;
+  const { data } = await supabaseClient.from("teachers").select("id, full_name");
+  const teachers = (data || []).slice().sort((x, y) =>
+    teacherSortKey(x.full_name).localeCompare(teacherSortKey(y.full_name), "ar"));
+  select.innerHTML =
+    `<option value="">All Teachers</option>` +
+    teachers.map((t) => `<option value="${t.id}">${escapeHtml(t.full_name)}</option>`).join("");
+  select.value = current;
+  if (select.value !== current) select.value = "";   // selected teacher no longer exists
+}
+
+async function loadAssignments({ refreshTeachers = true } = {}) {
   const table = $("assignmentsTable");
   table.innerHTML = `<tr><td>Loading...</td></tr>`;
-  const { data } = await supabaseClient
+  if (refreshTeachers) await populateAssignmentTeacherFilter();
+
+  let query = supabaseClient
     .from("teacher_subjects")
     .select("id, active, school_type, grades(name), subjects(name), teachers(full_name)")
     .order("id");
+  const teacherId = $("filterAssignTeacher").value;
+  if (teacherId) query = query.eq("teacher_id", teacherId);
+
+  const { data } = await query;
+  $("assignmentCount").textContent = `${(data || []).length} assignment${(data || []).length === 1 ? "" : "s"}`;
+  if (!data || data.length === 0) {
+    table.innerHTML = `<tbody><tr><td>No assignments${teacherId ? " for this teacher" : ""}.</td></tr></tbody>`;
+    return;
+  }
   table.innerHTML = `
     <thead><tr><th>Teacher</th><th>Subject</th><th>Grade</th><th>School Type</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>${(data || []).map((a) => `
@@ -1053,6 +946,8 @@ async function loadAssignments() {
       </tr>`).join("")}
     </tbody>`;
 }
+
+$("filterAssignTeacher").addEventListener("change", () => loadAssignments({ refreshTeachers: false }));
 
 $("btnAddAssignment").addEventListener("click", async () => {
   const [{ data: grades }, { data: teachers }] = await Promise.all([
