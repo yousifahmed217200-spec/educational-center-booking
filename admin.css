@@ -29,6 +29,13 @@
 }
 .admin-login__card h1 { font-size: 22px; color: var(--color-primary-dark); margin-bottom: 6px; }
 .admin-login__subtitle { color: var(--color-text-muted); font-size: 14px; margin-bottom: 22px; }
+.admin-login__links { text-align: center; margin-top: 16px; }
+.link-btn {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--color-primary); font-size: 14px; text-decoration: underline;
+}
+.link-btn:hover { color: var(--color-primary-dark); }
+#loginError .banner, #forgotMsg .banner, #recoveryMsg .banner { margin-bottom: 12px; }
 
 .admin-app {
   display: flex;
